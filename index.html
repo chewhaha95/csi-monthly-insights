@@ -411,6 +411,9 @@ a{color:inherit}
 .ucard .ukit span{font-family:var(--mono);font-size:9px;letter-spacing:.03em;color:var(--text-2);border:1px solid var(--line);padding:3px 7px;border-radius:3px}
 .enablers{margin-top:18px;border-top:1px dashed var(--line);padding-top:15px;font-size:13px;color:var(--text-2);line-height:1.55}
 .enablers b{color:var(--steel);font-family:var(--mono);font-size:10px;letter-spacing:.06em}
+.ugroup{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.01em;margin:30px 0 4px;padding-top:24px;border-top:1px solid var(--line)}
+.ugroup:first-of-type{border-top:none;padding-top:8px;margin-top:16px}
+.ugroup span{font-family:var(--mono);font-weight:400;font-size:9px;letter-spacing:.12em;color:var(--text-3);text-transform:uppercase}
 
 .about-block{margin-top:20px}
 .about-block .ab-h{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--red);margin-bottom:9px}
@@ -528,7 +531,7 @@ a{color:inherit}
 
     <div class="pop" id="bellPop">
       <h4>Edition · Jun 2026</h4>
-      <p><b id="popCount">9 serials</b> in the Manoeuvre package across 3 reporting theatres.</p>
+      <p><b id="popCount">… serials</b> <span id="popScope">across all four packages.</span></p>
       <p>Handling: <b>Open source · training use</b>.</p>
       <p style="color:var(--text-3);margin-bottom:0">AI-distilled — analyst review required before promulgation.</p>
     </div>
@@ -548,8 +551,10 @@ a{color:inherit}
 
     <!-- UNITS -->
     <div class="pane" id="pane-units">
-      <h2 class="ph">Manoeuvre Units</h2>
-      <p class="pintro">What our formations are built to do — the open-source anchor every serial is mapped against.</p>
+      <h2 class="ph">Units</h2>
+      <p class="pintro">What our formations are built to do — the open-source anchor every serial is mapped against. Four packages this edition, each with its own formations.</p>
+
+      <div class="ugroup">Manoeuvre <span>3 Div · 9 Div · Armour</span></div>
       <div class="ucard f3">
         <div class="uh"><b>3 Div</b><em>3rd Singapore Division</em></div>
         <div class="umotto">"Foremost and Utmost" · combined arms since 1991</div>
@@ -568,6 +573,55 @@ a{color:inherit}
         <p>Provides mobile firepower and shock to spearhead the advance and seize / hold key objectives. Operates the <b>Leopard 2SG</b> MBT, <b>Hunter</b> AFV, <b>Bionix</b> IFV and <b>Bronco</b> ATTC — the platforms directly in the FPV / fibre-optic threat envelope and the natural exploitation force once logistics are degraded.</p>
         <div class="ukit"><span>Leopard 2SG</span><span>Hunter AFV</span><span>Bionix IFV</span><span>Bronco ATTC</span></div>
       </div>
+
+      <div class="ugroup">Sense &amp; Strike <span>6 Div · Artillery · Army Int</span></div>
+      <div class="ucard f3">
+        <div class="uh"><b>6 Div</b><em>6th Singapore Division</em></div>
+        <div class="umotto">Combined arms division · owns the sense-to-shooter chain</div>
+        <p>Anchors the sense-and-strike fight — fusing ISR, targeting and fires into a single sense-to-shooter chain. Owns the problem of protecting that chain end to end when control links are jammed and the shooter is as exposed as the sensor.</p>
+        <div class="ukit"><span>Sense-to-shooter</span><span>Combined arms</span><span>Targeting cycle</span></div>
+      </div>
+      <div class="ucard f9">
+        <div class="uh"><b>Artillery</b><em>Singapore Artillery</em></div>
+        <div class="umotto">"In Oriente Primus" · the Army's strike arm</div>
+        <p>The deep-fires and air-defence arm — <b>HIMARS</b> reach, counter-battery and ground-based air defence. Holds the launcher-survivability problem: keep a guidance path that survives jamming, do not pause the fire plan after a leadership kill, and protect the launcher as hard as the command post.</p>
+        <div class="ukit"><span>HIMARS</span><span>Counter-battery</span><span>GBAD</span></div>
+      </div>
+      <div class="ucard fa">
+        <div class="uh"><b>Army Int</b><em>Army Intelligence</em></div>
+        <div class="umotto">Intelligence formation · win the fight before the strike</div>
+        <p>Owns the intelligence fight that has to be won before the strike — collection, target development and ISR. Matches target development to the adversary's adaptation speed and feeds the sense-to-shooter chain that fires depend on.</p>
+        <div class="ukit"><span>ISR</span><span>Target development</span><span>Collection</span></div>
+      </div>
+
+      <div class="ugroup">Combat Support <span>Engineer · Signals</span></div>
+      <div class="ucard f3">
+        <div class="uh"><b>Engineer</b><em>Singapore Combat Engineers</em></div>
+        <div class="umotto">"Advance and Overcome" · mobility &amp; counter-mobility</div>
+        <p>Breaching, bridging, obstacle and survivability work. This edition pushes engineers to the front of the assault — armoured to tank standard and inside the manoeuvre bubble — with every work party protected like a high-value target and dwell time treated as a survivability limit.</p>
+        <div class="ukit"><span>Breaching</span><span>Bridging</span><span>Armoured engineers</span></div>
+      </div>
+      <div class="ucard f9">
+        <div class="uh"><b>Signals</b><em>Singapore Signals</em></div>
+        <div class="umotto">"Speed Through Skill" · C2 and the spectrum</div>
+        <p>Owns command, control and the electromagnetic spectrum. Builds C2 that keeps working through full RF denial and the near-frontline satellite dead zone — backups, relays and pre-authorised comms-out so units fight on for 30+ minutes with the link down.</p>
+        <div class="ukit"><span>C2</span><span>EW / spectrum</span><span>Resilient comms</span></div>
+      </div>
+
+      <div class="ugroup">Expeditionary <span>Commandos · Guards</span></div>
+      <div class="ucard f3">
+        <div class="uh"><b>Commandos</b><em>Commando Formation</em></div>
+        <div class="umotto">"For Honour and Glory" · special operations</div>
+        <p>Elite force for pre-emptive small-team operations in enemy territory. Carries the individual-FPV-survival problem — the drone threat now reaches the single soldier, so the hear-it-then-cover reflex and hunting the operator (not the drone) become individual skills.</p>
+        <div class="ukit"><span>Special operations</span><span>Small-team raids</span><span>FPV survival</span></div>
+      </div>
+      <div class="ucard f9">
+        <div class="uh"><b>Guards</b><em>Guards Formation</em></div>
+        <div class="umotto">"Ready to Strike" · rapid-deployment infantry</div>
+        <p>Elite rapid-deployment infantry — heliborne and expeditionary. Reads ceasefire exploitation and incremental encroachment as deliberate doctrine: naming the TTP, mapping cumulative change, and treating relief-in-place handover as a threat-elevated phase.</p>
+        <div class="ukit"><span>Rapid deployment</span><span>Heliborne</span><span>Observe / monitor</span></div>
+      </div>
+
       <p class="enablers"><b>ENABLERS &gt;&gt;</b> Map each serial onto the 3rd-Gen triad — Precision Information, Precision Fires, Precision Manoeuvre. The counter-UAS fight pulls in <b>SCUDO</b> (Counter-UAS Development &amp; Operations Group), <b>DARE</b> (Drone Accelerator for Rapid Equipping), upgraded <b>HIMARS</b> for interdiction reach, and <b>Vesper</b> for organic ISR.</p>
     </div>
 
@@ -790,7 +844,6 @@ function buildTabs(){
     btn.onclick = ()=>{
       state.tab = btn.dataset.k; state.savedOnly=false; updateSavedIcon();
       loadPackage(state.tab);
-      if($("#popCount")) $("#popCount").textContent = SERIALS.length + " serials";
       if($("#askSugg")) $("#askSugg").innerHTML = SUGGESTIONS.map(x=>'<button class="sg">'+x+'</button>').join('');
       try{ ASK.thread=[]; }catch(e){}
       $("#tabs").querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b===btn?'true':'false'));
@@ -1035,7 +1088,9 @@ function init(){
   buildMerged();
   loadPackage(state.tab);
   buildTabs(); renderFeed(); renderSerials();
-  $("#popCount").textContent = SERIALS.length + " serials";
+  { const th = new Set(ALL_SERIALS.map(s=>s.theatre)).size;
+    $("#popCount").textContent = ALL_SERIALS.length + " serials";
+    $("#popScope").textContent = `across all four packages — Manoeuvre, Sense & Strike, Combat Support & Expeditionary — spanning ${th} reporting theatre${th===1?'':'s'}.`; }
 
   // feed taps (delegation)
   $("#feedContent").addEventListener('click', e=>{
