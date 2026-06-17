@@ -1,8 +1,8 @@
 /* Conflict Studies & Insights — service worker.
    Bump CACHE (v1 -> v2 ...) whenever you publish a new edition to force a refresh. */
-const CACHE = 'csi-insights-v1';
+const CACHE = 'csi-insights-v2';
 const ASSETS = [
-  './', './index.html', './manifest.webmanifest',
+  './', './index.html', './data.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'
 ];
 self.addEventListener('install', e => {
@@ -22,6 +22,14 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(req).then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put('./index.html', cp)); return r; })
         .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+  // Content data: network-first too, so a freshly published edition's serials show when online (like the page itself).
+  if (/\/data\.js(\?|$)/.test(new URL(req.url).pathname)) {
+    e.respondWith(
+      fetch(req).then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return r; })
+        .catch(() => caches.match(req))
     );
     return;
   }
