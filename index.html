@@ -73,7 +73,7 @@ a{color:inherit}
 .tabs-fade svg{width:16px;height:16px;color:var(--text-2)}
 .tab.weektab::before{content:"▾";font-size:11px;margin-right:5px;position:relative;top:-1px}
 /* week picker popover (reuses .pop chrome) */
-.weekpop{left:12px;right:auto;width:min(300px,calc(100vw - 24px));max-height:56vh;overflow-y:auto;padding:6px}
+.weekpop{position:fixed;top:100px;left:12px;right:auto;z-index:80;width:min(300px,calc(100vw - 24px));max-height:56vh;overflow-y:auto;padding:6px}
 .wk-row{display:block;width:100%;text-align:left;font-family:var(--disp);font-weight:600;font-size:14px;color:var(--text);padding:10px 10px;border-radius:8px;line-height:1.25}
 .wk-row:hover{background:var(--red-dim)}
 .wk-row[aria-selected="true"]{color:var(--red)}
@@ -559,8 +559,6 @@ a{color:inherit}
       <div class="tabs-fade"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>
     </div>
 
-    <div class="pop weekpop" id="weekPop" role="listbox" aria-label="Select a week"></div>
-
     <div class="pop" id="bellPop">
       <h4>Edition · Jun 2026</h4>
       <p><b id="popCount">… serials</b> <span id="popScope">across all four packages.</span></p>
@@ -742,6 +740,7 @@ a{color:inherit}
   </nav>
 
   <div class="scrim" id="scrim"></div>
+  <div class="pop weekpop" id="weekPop" role="listbox" aria-label="Select a week"></div>
 </div>
 
 <script src="data.js"></script>
@@ -869,9 +868,10 @@ function filtered(){
 
 /* ===================== TABS ===================== */
 function buildTabs(){
-  $("#tabs").innerHTML = PACKAGES.map(t=>
+  $("#tabs").innerHTML = `<button class="tab weektab" role="tab" data-week="1" aria-selected="${state.weekOpen}">Weekly Briefs</button>`
+    + PACKAGES.map(t=>
     `<button class="tab" role="tab" data-k="${t.k}" aria-selected="${!state.weekOpen && t.k===state.tab}">${t.label}</button>`
-  ).join('') + `<button class="tab weektab" role="tab" data-week="1" aria-selected="${state.weekOpen}">Weekly Briefs</button>`;
+  ).join('');
   $("#tabs").querySelectorAll('.tab').forEach(btn=>{
     if(btn.dataset.week){
       btn.onclick = ()=>{
@@ -1151,6 +1151,9 @@ async function toggleWeekPop(force){
   const open = force===undefined ? !pop.classList.contains('on') : force;
   if(!open){ closeWeekPop(); return; }
   $("#bellPop").classList.remove('on');
+  const r = $("#tabsWrap").getBoundingClientRect();
+  pop.style.top = Math.round(r.bottom + 4) + "px";
+  pop.style.left = Math.round(r.left + 12) + "px";
   pop.innerHTML = `<div class="wk-row" aria-disabled="true">Loading weeks…</div>`;
   pop.classList.add('on'); $("#scrim").classList.add('on');
   const weeks = await loadWeekList();
