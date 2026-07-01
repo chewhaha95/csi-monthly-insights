@@ -71,6 +71,36 @@ a{color:inherit}
 .tab[aria-selected="true"]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--red)}
 .tabs-fade{position:absolute;right:0;top:0;bottom:0;width:40px;background:linear-gradient(90deg,transparent,var(--bg) 72%);pointer-events:none;display:flex;align-items:center;justify-content:flex-end;padding-right:3px}
 .tabs-fade svg{width:16px;height:16px;color:var(--text-2)}
+.tab.weektab::before{content:"▾";font-size:11px;margin-right:5px;position:relative;top:-1px}
+/* week picker popover (reuses .pop chrome) */
+.weekpop{left:12px;right:auto;width:min(300px,calc(100vw - 24px));max-height:56vh;overflow-y:auto;padding:6px}
+.wk-row{display:block;width:100%;text-align:left;font-family:var(--disp);font-weight:600;font-size:14px;color:var(--text);padding:10px 10px;border-radius:8px;line-height:1.25}
+.wk-row:hover{background:var(--red-dim)}
+.wk-row[aria-selected="true"]{color:var(--red)}
+.wk-row .wk-cur{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:3px}
+/* reflowed weekly brief — stripped brief markup inherits app typography */
+.weekly{padding:0 16px 24px}
+.weekly .wk-head{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:10px;padding:12px 0 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.weekly .wk-title{font-family:var(--disp);font-weight:700;font-size:19px;color:var(--text);flex:1;line-height:1.2}
+.weekly .wk-title small{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:3px}
+.weekly .wk-change{flex:0 0 auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2);border:1px solid var(--line-2);border-radius:8px;padding:7px 10px;white-space:nowrap}
+.weekly .wk-change:hover{color:var(--red);border-color:var(--red)}
+.weekly section{margin:0 0 26px}
+.weekly h2{font-family:var(--disp);font-weight:700;font-size:20px;color:var(--text);margin:0 0 10px;line-height:1.2}
+.weekly h3{font-family:var(--disp);font-weight:700;font-size:16px;color:var(--text);margin:16px 0 7px}
+.weekly h4{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin:12px 0 6px}
+.weekly p{font-family:var(--body);font-size:14.5px;line-height:1.6;color:var(--text-2);margin:0 0 10px}
+.weekly ul,.weekly ol{margin:0 0 12px;padding-left:18px}
+.weekly li{font-family:var(--body);font-size:14.5px;line-height:1.55;color:var(--text-2);margin-bottom:6px}
+.weekly a{color:var(--red);text-decoration:underline;text-underline-offset:2px}
+.weekly b,.weekly strong{color:var(--text)}
+.weekly table{width:100%;border-collapse:collapse;font-family:var(--body);font-size:12.5px;margin:4px 0 12px}
+.weekly th,.weekly td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top;color:var(--text-2)}
+.weekly th{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);background:var(--surface-2)}
+.weekly .wk-src{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--text-3);margin:0 0 18px}
+.weekly .wk-src a{color:var(--text-3)}
+.weekly .wk-msg{padding:36px 8px;text-align:center}
+.weekly .wk-msg p{font-size:13.5px;color:var(--text-3)}
 
 /* search bar (toggled) */
 /* ===== ASK (grounded chat) ===== */
@@ -529,6 +559,8 @@ a{color:inherit}
       <div class="tabs-fade"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>
     </div>
 
+    <div class="pop weekpop" id="weekPop" role="listbox" aria-label="Select a week"></div>
+
     <div class="pop" id="bellPop">
       <h4>Edition · Jun 2026</h4>
       <p><b id="popCount">… serials</b> <span id="popScope">across all four packages.</span></p>
@@ -817,7 +849,7 @@ function submitAsk(text){
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed" };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -838,10 +870,22 @@ function filtered(){
 /* ===================== TABS ===================== */
 function buildTabs(){
   $("#tabs").innerHTML = PACKAGES.map(t=>
-    `<button class="tab" role="tab" data-k="${t.k}" aria-selected="${t.k===state.tab}">${t.label}</button>`
-  ).join('');
+    `<button class="tab" role="tab" data-k="${t.k}" aria-selected="${!state.weekOpen && t.k===state.tab}">${t.label}</button>`
+  ).join('') + `<button class="tab weektab" role="tab" data-week="1" aria-selected="${state.weekOpen}">Weekly Briefs</button>`;
   $("#tabs").querySelectorAll('.tab').forEach(btn=>{
+    if(btn.dataset.week){
+      btn.onclick = ()=>{
+        state.weekOpen = true;
+        $("#tabs").querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b===btn?'true':'false'));
+        if(state.section!=="feed") showSection('feed');
+        renderFeed();
+        $("#scroll").scrollIntoView({block:'start'}); window.scrollTo(0,0);
+        toggleWeekPop(true);
+      };
+      return;
+    }
     btn.onclick = ()=>{
+      state.weekOpen = false; closeWeekPop();
       state.tab = btn.dataset.k; state.savedOnly=false; updateSavedIcon();
       loadPackage(state.tab);
       if($("#askSugg")) $("#askSugg").innerHTML = SUGGESTIONS.map(x=>'<button class="sg">'+x+'</button>').join('');
@@ -877,6 +921,7 @@ function interstitialHTML(){
     <div class="kj"><p>${kj}</p></div></div>`;
 }
 function renderFeed(){
+  if(state.weekOpen){ renderWeekly(); return; }
   const t = PACKAGES.find(x=>x.k===state.tab);
   const c = $("#feedContent");
   if(!t.live){ c.innerHTML = `<div class="empty"><b>${t.title}</b><p>This package is in development. ${t.title} insights will be distilled into a learning pack in a later edition — the Manoeuvre package is live now.</p></div>`; return; }
@@ -1067,8 +1112,109 @@ function showSection(sec){
 }
 
 /* ===================== POP ===================== */
-function closePop(){ $("#bellPop").classList.remove('on'); $("#scrim").classList.remove('on'); }
-function togglePop(){ const on=$("#bellPop").classList.toggle('on'); $("#scrim").classList.toggle('on', on); }
+function closePop(){ $("#bellPop").classList.remove('on'); closeWeekPop(); $("#scrim").classList.remove('on'); }
+function togglePop(){ closeWeekPop(); const on=$("#bellPop").classList.toggle('on'); $("#scrim").classList.toggle('on', on); }
+
+/* ===================== WEEKLY BRIEFS ===================== */
+/* fetch with a timeout so offline/blocked requests fall back fast */
+function fetchTimeout(url, ms){
+  const ctl = new AbortController();
+  const id = setTimeout(()=>ctl.abort(), ms);
+  return fetch(url, {credentials:"omit", signal:ctl.signal}).finally(()=>clearTimeout(id));
+}
+/* Fetch + parse the archive from the weekly site; fall back to the baked-in
+   list if the request fails (offline / blocked). Cached on state.weekList. */
+async function loadWeekList(){
+  if(state.weekList) return state.weekList;
+  try{
+    const res = await fetchTimeout(WEEKLY_BASE + "/", 6000);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+    const seen = new Set(), list = [];
+    const curLabel = (doc.title||"").replace(/^.*?—\s*/, "").trim() || "Latest week";
+    list.push({url:"/", label:curLabel}); seen.add("/");
+    doc.querySelectorAll('a[href]').forEach(a=>{
+      const href = a.getAttribute('href')||"";
+      if(!/^\/[0-9].*-20\d\d\.html$/i.test(href) || seen.has(href)) return;
+      const label = (a.textContent||"").replace(/\s+/g,' ').trim();
+      if(label){ seen.add(href); list.push({url:href, label}); }
+    });
+    state.weekList = list.length>1 ? list : WEEKLY_WEEKS_FALLBACK;
+  }catch(e){
+    state.weekList = WEEKLY_WEEKS_FALLBACK;
+  }
+  return state.weekList;
+}
+function closeWeekPop(){ $("#weekPop").classList.remove('on'); if(!$("#bellPop").classList.contains('on')) $("#scrim").classList.remove('on'); }
+async function toggleWeekPop(force){
+  const pop = $("#weekPop");
+  const open = force===undefined ? !pop.classList.contains('on') : force;
+  if(!open){ closeWeekPop(); return; }
+  $("#bellPop").classList.remove('on');
+  pop.innerHTML = `<div class="wk-row" aria-disabled="true">Loading weeks…</div>`;
+  pop.classList.add('on'); $("#scrim").classList.add('on');
+  const weeks = await loadWeekList();
+  renderWeekPop(weeks);
+}
+function renderWeekPop(weeks){
+  const pop = $("#weekPop");
+  pop.innerHTML = weeks.map((w,i)=>
+    `<button class="wk-row" role="option" data-wk="${i}" aria-selected="${w.url===state.weekUrl}">${i===0?'<span class="wk-cur">Current week</span>':''}${esc(w.label)}</button>`
+  ).join('');
+  pop.querySelectorAll('.wk-row').forEach(row=>{
+    row.onclick = ()=>{ const w = weeks[+row.dataset.wk]; closeWeekPop(); selectWeek(w); };
+  });
+}
+async function selectWeek(w){
+  if(!w) return;
+  state.weekUrl = w.url; state.weekLabel = w.label;
+  const c = $("#feedContent");
+  c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Loading brief…</p></div></div>`;
+  window.scrollTo(0,0);
+  try{
+    const res = await fetchTimeout(WEEKLY_BASE + w.url, 9000);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    c.innerHTML = `<div class="weekly">${weekHeadHTML()}${reflowBrief(await res.text())}</div>`;
+  }catch(e){
+    const full = WEEKLY_BASE + (w.url==="/" ? "/" : w.url);
+    c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Couldn't load this brief. <a href="${full}" target="_blank" rel="noopener">Open on the web ↗</a></p></div></div>`;
+  }
+  bindWeekHead();
+  window.scrollTo(0,0);
+}
+function weekHeadHTML(){
+  return `<div class="wk-head"><div class="wk-title"><small>Weekly Brief</small>${state.weekLabel?esc(state.weekLabel):'Select a week'}</div><button class="wk-change" id="wkChange">Change week ▾</button></div>`;
+}
+function bindWeekHead(){ const b=$("#wkChange"); if(b) b.onclick=(e)=>{ e.stopPropagation(); toggleWeekPop(true); }; }
+/* Reflow the fetched brief into the app's own styling: keep the content
+   <section> blocks, strip class/style/id so app CSS governs, absolutize any
+   relative links, and open sources in a new tab. */
+function reflowBrief(htmlString){
+  const doc = new DOMParser().parseFromString(htmlString, "text/html");
+  let sections = Array.from(doc.querySelectorAll('section'));
+  if(!sections.length){ const m=doc.querySelector('main,article'); if(m) sections=[m]; }
+  if(!sections.length) return `<div class="wk-src">Source: <a href="${WEEKLY_BASE}${state.weekUrl==='/'?'/':state.weekUrl}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div><div class="wk-msg"><p>No readable content found.</p></div>`;
+  const wrap = doc.createElement('div');
+  sections.forEach(sec=>wrap.appendChild(sec.cloneNode(true)));
+  wrap.querySelectorAll('*').forEach(el=>{
+    el.removeAttribute('class'); el.removeAttribute('style'); el.removeAttribute('id');
+    if(el.tagName==='A'){
+      const href = el.getAttribute('href');
+      if(href && !/^https?:|^mailto:/i.test(href)) el.setAttribute('href', WEEKLY_BASE + (href.startsWith('/')?href:'/'+href));
+      el.setAttribute('target','_blank'); el.setAttribute('rel','noopener');
+    }
+    if(el.tagName==='IMG'){ const s=el.getAttribute('src'); if(s && !/^https?:|^data:/i.test(s)) el.setAttribute('src', WEEKLY_BASE + (s.startsWith('/')?s:'/'+s)); }
+    if(el.tagName==='SCRIPT'||el.tagName==='STYLE'||el.tagName==='LINK') el.remove();
+  });
+  const src = `<div class="wk-src">Source: <a href="${WEEKLY_BASE}${state.weekUrl==='/'?'/':state.weekUrl}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div>`;
+  return src + wrap.innerHTML;
+}
+function renderWeekly(){
+  const c = $("#feedContent");
+  if(state.weekUrl){ selectWeek({url:state.weekUrl, label:state.weekLabel}); return; }
+  c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Pick a week from the <b>Weekly Briefs ▾</b> menu to read that week's brief here.</p></div></div>`;
+  bindWeekHead();
+}
 
 /* ===================== CHECKLIST ===================== */
 function buildChecklist(){
