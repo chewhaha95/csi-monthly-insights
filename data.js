@@ -230,6 +230,22 @@ const SUMMARY_M = {
 };
 /* ---- link to the weekly brief (the signal feed this digest distils) ---- */
 const WEEKLY_URL = "https://conflictstudiesandinsights.pages.dev/";
+/* Base (no trailing slash) + baked-in fallback week list used when the live
+   archive fetch fails/offline. The live list is parsed from the site index and
+   supersedes this whenever available. `url` is relative to WEEKLY_BASE. */
+const WEEKLY_BASE = "https://conflictstudiesandinsights.pages.dev";
+const WEEKLY_WEEKS_FALLBACK = [
+  {url:"/", label:"22 June – 29 June 2026"},
+  {url:"/15-22-jun-2026.html", label:"15 June – 22 June 2026"},
+  {url:"/8-15-jun-2026.html", label:"8 June – 15 June 2026"},
+  {url:"/1-8-jun-2026.html", label:"1 June – 8 June 2026"},
+  {url:"/25-may-1-jun-2026.html", label:"25 May – 1 June 2026"},
+  {url:"/18-25-may-2026.html", label:"18 May – 25 May 2026"},
+  {url:"/11-18-may-2026.html", label:"11 May – 18 May 2026"},
+  {url:"/4-11-may-2026.html", label:"4 May – 11 May 2026"},
+  {url:"/27-apr-4-may-2026.html", label:"27 April – 4 May 2026"},
+  {url:"/20-27-apr-2026.html", label:"20 April – 27 April 2026"}
+];
 const SIGNAL_M = {
  "M-01":"From the running weekly coverage of Ukraine's deep-strike campaign — St. Petersburg / Kronstadt oil and naval strikes, Krasnodar oil infrastructure, and the confirmed Crimea fuel crisis.",
  "M-02":"Distilled from weekly tracking of the IDF advance into southern Lebanon and Hezbollah's layered FPV / anti-tank contest around Nabatieh.",
