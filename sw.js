@@ -1,9 +1,9 @@
 /* Conflict Studies & Insights — service worker.
    Bump CACHE (v1 -> v2 ...) whenever you publish a new edition to force a refresh. */
-const CACHE = 'csi-insights-v9';
+const CACHE = 'csi-insights-v10';
 const ASSETS = [
   './', './index.html', './data.js', './manifest.webmanifest',
-  './icon-192.png', './icon-512.png', './icon-512-maskable.png', './apple-touch-icon.png'
+  './icon-192.png', './icon-512.png', './icon-512-maskable.png', './apple-touch-icon.png', './og-cover.png'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
