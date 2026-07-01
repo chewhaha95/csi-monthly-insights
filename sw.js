@@ -1,6 +1,6 @@
 /* Conflict Studies & Insights — service worker.
    Bump CACHE (v1 -> v2 ...) whenever you publish a new edition to force a refresh. */
-const CACHE = 'csi-insights-v7';
+const CACHE = 'csi-insights-v8';
 const ASSETS = [
   './', './index.html', './data.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-512-maskable.png', './apple-touch-icon.png'
@@ -17,6 +17,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  // Only handle our own origin. Cross-origin requests (e.g. live weekly briefs
+  // fetched from conflictstudiesandinsights.pages.dev) must pass through to the
+  // network untouched — never route them through our cache.
+  if (new URL(req.url).origin !== self.location.origin) return;
   // Page loads: network-first so a freshly published edition shows when online; cache fallback offline.
   if (req.mode === 'navigate') {
     e.respondWith(
