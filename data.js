@@ -205,14 +205,37 @@ const ICT_M = {
     twist:"Controller reports a second incident during the hold — do you split the QRF or hold the SOP?",
     std:"Hold and UGV assessment observed; QRF cleared the predicted follow-on area; no secondary mass-casualty event." }
 };
-const THEATRE_NAME = {"RUS-UKR":"Russia–Ukraine","ISR-LBN":"Israel–Lebanon","THA-KHM":"Thailand–Cambodia","ISR-HMS":"Israel–Hamas","USI-IRN":"US/Israel–Iran"};
+const THEATRE_NAME = {"RUS-UKR":"Russia–Ukraine","ISR-LBN":"Israel–Lebanon","THA-KHM":"Thailand–Cambodia","ISR-HMS":"Israel–Hamas","USI-IRN":"US/Israel–Iran","SDN":"Sudan"};
 const BLUF_TEXT_M = "In June the manoeuvre fight was decided by <b>method, not mass</b>. The IDF moved a ceasefire line 10 km in under two months by making each advance a <b>pre-planned response to a provocation</b>. Ukraine split the drone fight into an <b>unjammable fibre-optic close layer</b> and an <b>AI-autonomous deep layer</b> that no single EW answer defeats — and moved its own logistics <b>unmanned</b> where manned vehicles die. And Russia's <b>double-tap</b> proved the follow-on strike is aimed at your rescue. Pre-authorise your exploitation triggers, break the co-location signature, and write timed CASEVAC and off-route QRF drills into every SOP.";
 const SUGGESTIONS_M = ["What changed for manoeuvre this month?","How do we counter fibre-optic FPV?","What is the double-tap and how do we defeat it?","Lessons for Armour","What to rehearse in ICT","Give me the bottom line"];
 const _STOP = new Set("the a an and or of to in for on at by from with into onto over under is are was were be been being it this that those these as our we us your you their they them do does did how what which who why when where than then so such also more most any all key lead led leading about can could should would will not".split(" "));
-const _THK = {"RUS-UKR":["russia","russian","ukraine","ukrainian","geran","shahed","donetsk","pokrovsk","kursk"],"ISR-LBN":["israel","israeli","lebanon","lebanese","hezbollah","idf","nabatieh","merkava","beaufort","litani"],"THA-KHM":["thailand","thai","cambodia","cambodian","osmach"],"ISR-HMS":["hamas","gaza","qassam","odeh","haddad","khrizim","decapitation"]};
+const _THK = {"RUS-UKR":["russia","russian","ukraine","ukrainian","geran","shahed","donetsk","pokrovsk","kursk","chonhar"],"ISR-LBN":["israel","israeli","lebanon","lebanese","hezbollah","idf","nabatieh","merkava","beaufort","litani"],"THA-KHM":["thailand","thai","cambodia","cambodian","osmach"],"ISR-HMS":["hamas","gaza","qassam","odeh","haddad","khrizim","decapitation"],"SDN":["sudan","sudanese","rsf","obeid","kordofan","besieged","besiege","siege"]};
 const _FMK_M = {"3DIV":["3div","3 div","3rd div","third div"],"9DIV":["9div","9 div","9th div","ninth div"],"ARMD":["armour","armor","armoured","armored","tank","tanks","leopard","hunter","bionix","bronco","mbt","afv"]};
 const _OUT = {success:["success","successful","succeed","worked","effective","effectively","win","won","decisive","gained","advantage","best","what worked"],failure:["fail","failed","failure","failures","lost","loss","losses","casualt","vulnerable","vulnerability","mistake","wrong","unsustainable","what failed","did not"],threat:["threat","gap","capability","capdev","weakness","unjammable"]};
 const _SEC = {bluf:["bottom line","bluf","summary","summarise","summarize","overview","tldr","tl;dr","takeaway","big picture","headline","in short"],planning:["planning","oplan","estimate","checklist","precondition","go/no-go","go no go","gonogo"],ict:["rehearse","ict","in-camp","train","training","exercise","drill","practice","practise"]};
+/* Concept clusters for the on-device assistant. Each inner array is a set of
+   equivalent single-word terms; a query token matching any member expands to the
+   whole cluster before ranking, so lay phrasing ("drone", "wired") reaches the
+   right serials. Members are single lowercase tokens (the tokeniser splits on
+   hyphens/spaces), grounded in the June corpus vocabulary. */
+const SYN = [
+  ["drone","drones","fpv","uav","uas","loitering","quadcopter","geran","shahed","munition"],
+  ["fibre","fiber","wired","tethered","optic","unjammable"],
+  ["doubletap","double","tap","reattack","rescue","casevac","followup","secondary"],
+  ["jam","jamming","jammer","ew","electronic","spoofing","gnss","spectrum","warfare"],
+  ["starlink","satcom","satellite","connectivity","uplink"],
+  ["ugv","unmanned","robot","robotic","groundrobot"],
+  ["bridge","crossing","span","chonhar","pontoon","bridging","interdiction"],
+  ["saturation","mass","swarm","overwhelm","saturate","salvo","decoy","cruise","ballistic","hypersonic"],
+  ["decapitation","leadership","commander","commanders","managers","finance","depth","targeting"],
+  ["autonomous","autonomy","brave1","intercept","interceptor"],
+  ["siege","besiege","besieged","encircle","blockade","obeid","infrastructure"],
+  ["ceasefire","truce","encroachment","creep","baseline","observer","compliance"],
+  ["subthreshold","greyzone","provocation","incursion","threshold"],
+  ["resupply","logistics","sustainment","supply","passability"],
+  ["engineer","engineers","sapper","repair","breach","obstacle"],
+  ["forceprotection","survivability","protection","cover","hardening"]
+];
 
 /* ===================== SENSE & STRIKE PACKAGE (Package 2) ===================== */
 const FORMATIONS_S = {"6DIV":{c:"f3",n:"6 Div"},"ARTY":{c:"f9",n:"Artillery"},"AINT":{c:"fa",n:"Army Int"}};
