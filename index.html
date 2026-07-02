@@ -249,6 +249,13 @@ a{color:inherit}
 .serchip{flex:0 0 auto;font-family:var(--mono);font-size:12px;letter-spacing:.02em;color:var(--text-2);background:var(--surface-2);border:1px solid var(--line-2);border-radius:16px;padding:7px 12px;white-space:nowrap;cursor:pointer}
 .serchip.on{color:#fff;background:var(--red);border-color:var(--red)}
 .serchip:disabled,.serchip.off{opacity:.4;cursor:not-allowed}
+.searchbar{padding:0 16px 12px}
+.searchbar input{width:100%;font-family:var(--body);font-size:15px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;outline:none;-webkit-appearance:none}
+.searchbar input::placeholder{color:var(--text-3)}
+.searchbar input:focus{border-color:var(--red)}
+.facet-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 10px;align-items:center}
+.facet-row::-webkit-scrollbar{display:none}
+.facet-lbl{flex:0 0 auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin-right:2px}
 .ser-group{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);padding:16px 16px 8px;border-top:1px solid var(--line);margin-top:4px}
 .cx{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 15px 13px;margin:0 16px 12px}
 .cx-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}
@@ -583,80 +590,13 @@ a{color:inherit}
       <div id="serialsContent"></div>
     </div>
 
-    <!-- UNITS -->
-    <div class="pane" id="pane-units">
-      <h2 class="ph">Units</h2>
-      <p class="pintro">What our formations are built to do — the open-source anchor every serial is mapped against. Four packages this edition, each with its own formations.</p>
-
-      <div class="ugroup">Manoeuvre <span>3 Div · 9 Div · Armour</span></div>
-      <div class="ucard f3">
-        <div class="uh"><b>3 Div</b><em>3rd Singapore Division</em></div>
-        <div class="umotto">"Foremost and Utmost" · combined arms since 1991</div>
-        <p>The Army's first Combined Arms Division and its standing <b>test-bed for new battle concepts and tactics</b>. Integrates infantry, armour, artillery, engineers, signals, intelligence and air defence under Mechanised and Motorised Combined Arms Brigades — the natural owner of the "degrade-then-exploit" model.</p>
-        <div class="ukit"><span>Combined Arms Bdes</span><span>Concept test-bed</span><span>Western / central</span></div>
-      </div>
-      <div class="ucard f9">
-        <div class="uh"><b>9 Div</b><em>9th Singapore Division</em></div>
-        <div class="umotto">"Forging Ahead" · shares command with Infantry</div>
-        <p>Combined arms division built around the Infantry formation. Carries the close-terrain and urban manoeuvre burden — exactly where the stand-off FPV / hold-vs-advance dilemma and fire-discipline lessons bite hardest. Owns the mobility-as-protection problem.</p>
-        <div class="ukit"><span>Infantry-centric</span><span>Close terrain / urban</span><span>Combined arms</span></div>
-      </div>
-      <div class="ucard fa">
-        <div class="uh"><b>Armour</b><em>Armour Formation</em></div>
-        <div class="umotto">"Swift and Decisive" · 40 / 41 / 42 / 48 SAR</div>
-        <p>Provides mobile firepower and shock to spearhead the advance and seize / hold key objectives. Operates the <b>Leopard 2SG</b> MBT, <b>Hunter</b> AFV, <b>Bionix</b> IFV and <b>Bronco</b> ATTC — the platforms directly in the FPV / fibre-optic threat envelope and the natural exploitation force once logistics are degraded.</p>
-        <div class="ukit"><span>Leopard 2SG</span><span>Hunter AFV</span><span>Bionix IFV</span><span>Bronco ATTC</span></div>
-      </div>
-
-      <div class="ugroup">Sense &amp; Strike <span>6 Div · Artillery · Army Int</span></div>
-      <div class="ucard f3">
-        <div class="uh"><b>6 Div</b><em>6th Singapore Division</em></div>
-        <div class="umotto">Combined arms division · owns the sense-to-shooter chain</div>
-        <p>Anchors the sense-and-strike fight — fusing ISR, targeting and fires into a single sense-to-shooter chain. Owns the problem of protecting that chain end to end when control links are jammed and the shooter is as exposed as the sensor.</p>
-        <div class="ukit"><span>Sense-to-shooter</span><span>Combined arms</span><span>Targeting cycle</span></div>
-      </div>
-      <div class="ucard f9">
-        <div class="uh"><b>Artillery</b><em>Singapore Artillery</em></div>
-        <div class="umotto">"In Oriente Primus" · the Army's strike arm</div>
-        <p>The deep-fires and air-defence arm — <b>HIMARS</b> reach, counter-battery and ground-based air defence. Holds the launcher-survivability problem: keep a guidance path that survives jamming, do not pause the fire plan after a leadership kill, and protect the launcher as hard as the command post.</p>
-        <div class="ukit"><span>HIMARS</span><span>Counter-battery</span><span>GBAD</span></div>
-      </div>
-      <div class="ucard fa">
-        <div class="uh"><b>Army Int</b><em>Army Intelligence</em></div>
-        <div class="umotto">Intelligence formation · win the fight before the strike</div>
-        <p>Owns the intelligence fight that has to be won before the strike — collection, target development and ISR. Matches target development to the adversary's adaptation speed and feeds the sense-to-shooter chain that fires depend on.</p>
-        <div class="ukit"><span>ISR</span><span>Target development</span><span>Collection</span></div>
-      </div>
-
-      <div class="ugroup">Combat Support <span>Engineer · Signals</span></div>
-      <div class="ucard f3">
-        <div class="uh"><b>Engineer</b><em>Singapore Combat Engineers</em></div>
-        <div class="umotto">"Advance and Overcome" · mobility &amp; counter-mobility</div>
-        <p>Breaching, bridging, obstacle and survivability work. This edition pushes engineers to the front of the assault — armoured to tank standard and inside the manoeuvre bubble — with every work party protected like a high-value target and dwell time treated as a survivability limit.</p>
-        <div class="ukit"><span>Breaching</span><span>Bridging</span><span>Armoured engineers</span></div>
-      </div>
-      <div class="ucard f9">
-        <div class="uh"><b>Signals</b><em>Singapore Signals</em></div>
-        <div class="umotto">"Speed Through Skill" · C2 and the spectrum</div>
-        <p>Owns command, control and the electromagnetic spectrum. Builds C2 that keeps working through full RF denial and the near-frontline satellite dead zone — backups, relays and pre-authorised comms-out so units fight on for 30+ minutes with the link down.</p>
-        <div class="ukit"><span>C2</span><span>EW / spectrum</span><span>Resilient comms</span></div>
-      </div>
-
-      <div class="ugroup">Expeditionary <span>Commandos · Guards</span></div>
-      <div class="ucard f3">
-        <div class="uh"><b>Commandos</b><em>Commando Formation</em></div>
-        <div class="umotto">"For Honour and Glory" · special operations</div>
-        <p>Elite force for pre-emptive small-team operations in enemy territory. Carries the individual-FPV-survival problem — the drone threat now reaches the single soldier, so the hear-it-then-cover reflex and hunting the operator (not the drone) become individual skills.</p>
-        <div class="ukit"><span>Special operations</span><span>Small-team raids</span><span>FPV survival</span></div>
-      </div>
-      <div class="ucard f9">
-        <div class="uh"><b>Guards</b><em>Guards Formation</em></div>
-        <div class="umotto">"Ready to Strike" · rapid-deployment infantry</div>
-        <p>Elite rapid-deployment infantry — heliborne and expeditionary. Reads ceasefire exploitation and incremental encroachment as deliberate doctrine: naming the TTP, mapping cumulative change, and treating relief-in-place handover as a threat-elevated phase.</p>
-        <div class="ukit"><span>Rapid deployment</span><span>Heliborne</span><span>Observe / monitor</span></div>
-      </div>
-
-      <p class="enablers"><b>ENABLERS &gt;&gt;</b> Map each serial onto the 3rd-Gen triad — Precision Information, Precision Fires, Precision Manoeuvre. The counter-UAS fight pulls in <b>SCUDO</b> (Counter-UAS Development &amp; Operations Group), <b>DARE</b> (Drone Accelerator for Rapid Equipping), upgraded <b>HIMARS</b> for interdiction reach, and <b>Vesper</b> for organic ISR.</p>
+    <!-- SEARCH / EXPLORE -->
+    <div class="pane" id="pane-search" style="padding:0">
+      <h1 class="section-title" style="font-size:28px;padding:18px 16px 2px">Search</h1>
+      <div class="theatre-sub" style="padding-bottom:10px">Search every serial across all four packages.</div>
+      <div class="searchbar"><input id="searchInput" type="search" inputmode="search" autocomplete="off" placeholder="Search tactics, theatres, formations…" aria-label="Search serials"></div>
+      <div id="searchFacets"></div>
+      <div id="searchResults"></div>
     </div>
 
     <!-- ABOUT -->
@@ -733,9 +673,9 @@ a{color:inherit}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="4" cy="5" r="0.6" fill="currentColor"/></svg>
       <span>Serials</span>
     </button>
-    <button class="nav-item" data-sec="units">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6Z"/></svg>
-      <span>Units</span>
+    <button class="nav-item" data-sec="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <span>Search</span>
     </button>
     <button class="nav-item" data-sec="about">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.2"/></svg>
@@ -758,6 +698,20 @@ function buildMerged(){
     Object.assign(SUMMARY,d.SUMMARY); Object.assign(SIGNAL,d.SIGNAL); Object.assign(APP,d.APP);
     Object.assign(ICT,d.ICT); Object.assign(LEARN,d.LEARN||{}); Object.assign(FORMATIONS_ALL,d.FORMATIONS);
     d.SERIALS.forEach(s=>{ ALL_SERIALS.push(s); PKG_OF[s.id]=p.k; }); });
+  buildIndexAll();
+}
+/* global search index across ALL_SERIALS (Search pane) */
+let _HAYALL = {}, _TITALL = {};
+function buildIndexAll(){
+  _HAYALL = {}; _TITALL = {};
+  ALL_SERIALS.forEach(s=>{
+    const a=APP[s.id]||{}, i=ICT[s.id]||{};
+    const at=[a.lead,a.div&&a.div.d,a.div&&a.div.a,a.bde&&a.bde.d,a.bde&&a.bde.a].filter(Boolean).join(" ");
+    const it=[i.fmt,i.set,i.run&&i.run.join(" "),i.dec,i.std].filter(Boolean).join(" ");
+    const fn=s.formations.map(f=>(FORMATIONS_ALL[f]||{n:f}).n).join(" ");
+    _HAYALL[s.id]=(s.id+" "+s.title+" "+(SUMMARY[s.id]||"")+" "+s.theatre+" "+s.blocks.map(b=>b.t).join(" ")+" "+at+" "+it+" "+fn).toLowerCase();
+    _TITALL[s.id]=(s.title+" "+(SUMMARY[s.id]||"")).toLowerCase();
+  });
 }
 function loadPackage(tab){
   const d = PKG[tab] || PKG.MANOEUVRE;
@@ -852,7 +806,7 @@ function submitAsk(text){
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL" };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -963,6 +917,47 @@ function renderSerials(){
     html += g.map(s=>feedCard(s)).join('');
   });
   html += `<div class="feedfoot"><p>Each serial is a full source packet behind the monthly pack — distilled from the <b>Conflict Studies &amp; Insights</b> weekly briefs.</p><a href="${WEEKLY_URL}" target="_blank" rel="noopener">Read the weekly brief →</a></div>`;
+  c.innerHTML = html;
+}
+
+/* ===================== SEARCH / EXPLORE ===================== */
+const VERDICT_FACETS = [{k:"success",l:"Success"},{k:"mixed",l:"Mixed"},{k:"threat",l:"Threat"}];
+function searchFacetsHTML(){
+  const tmap={}; ALL_SERIALS.forEach(s=>{ if(!tmap[s.conflict]) tmap[s.conflict]=s.theatre; });
+  const theatres = Object.keys(tmap).map(c=>({k:c, l:tmap[c]}));
+  const tv = state.fTheatre, vv = state.fVerdict;
+  const tchips = `<span class="facet-lbl">Theatre</span><button class="serchip${tv==='ALL'?' on':''}" data-facet="theatre" data-val="ALL">All</button>`
+    + theatres.map(t=>`<button class="serchip${tv===t.k?' on':''}" data-facet="theatre" data-val="${t.k}">${t.l}</button>`).join('');
+  const vchips = `<span class="facet-lbl">Outcome</span><button class="serchip${vv==='ALL'?' on':''}" data-facet="verdict" data-val="ALL">All</button>`
+    + VERDICT_FACETS.map(v=>`<button class="serchip${vv===v.k?' on':''}" data-facet="verdict" data-val="${v.k}">${v.l}</button>`).join('');
+  return `<div class="facet-row">${tchips}</div><div class="facet-row">${vchips}</div>`;
+}
+function renderSearch(){
+  $("#searchFacets").innerHTML = searchFacetsHTML();
+  const c = $("#searchResults");
+  let list = ALL_SERIALS.slice();
+  if(state.fTheatre!=='ALL') list = list.filter(s=>s.conflict===state.fTheatre);
+  if(state.fVerdict!=='ALL') list = list.filter(s=>s.verdict===state.fVerdict);
+  const q = (state.q||'').trim();
+  if(q){
+    const toks=_toks(q);
+    list = list.map(s=>{ let sc=0; toks.forEach(t=>{ if(_TITALL[s.id].includes(t)) sc+=3; else if(_HAYALL[s.id].includes(t)) sc+=1; }); return {s,sc}; })
+               .filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc).map(x=>x.s);
+  }
+  const n=list.length;
+  const sub = q || state.fTheatre!=='ALL' || state.fVerdict!=='ALL'
+    ? `${n} result${n===1?'':'s'}`
+    : `All ${n} serials across packages · June 2026`;
+  let html = `<div class="theatre-sub" style="padding:2px 16px 10px">${sub}</div>`;
+  if(!n){
+    html += `<div class="empty"><b>No matches</b><p>Try a different term, or clear the theatre / outcome filters.</p></div>`;
+    c.innerHTML = html; return;
+  }
+  if(q){ html += list.map(s=>feedCard(s)).join(''); }
+  else {
+    PACKAGES.forEach(p=>{ const g=list.filter(s=>PKG_OF[s.id]===p.k); if(!g.length) return;
+      html += `<div class="ser-group">${p.label} · ${g.length}</div>` + g.map(s=>feedCard(s)).join(''); });
+  }
   c.innerHTML = html;
 }
 const statusClass = st => { const x=st.toLowerCase(); if(x.includes("action")||x.includes("strain")||x.includes("now")) return "st-now"; if(x.includes("watch")||x.includes("weak")) return "st-watch"; return "st-high"; };
@@ -1256,7 +1251,16 @@ function init(){
   });
 
   // bottom nav
-  document.querySelectorAll('.nav-item').forEach(n=> n.onclick=()=>{ state.savedOnly=false; updateSavedIcon(); showSection(n.dataset.sec); if(n.dataset.sec==='feed') renderFeed(); if(n.dataset.sec==='serials') renderSerials(); });
+  document.querySelectorAll('.nav-item').forEach(n=> n.onclick=()=>{ state.savedOnly=false; updateSavedIcon(); showSection(n.dataset.sec); if(n.dataset.sec==='feed') renderFeed(); if(n.dataset.sec==='serials') renderSerials(); if(n.dataset.sec==='search') renderSearch(); });
+  const _si=$("#searchInput"); if(_si) _si.addEventListener('input', e=>{ state.q=e.target.value; renderSearch(); });
+  $("#pane-search").addEventListener('click', e=>{
+    const chip=e.target.closest('[data-facet]');
+    if(chip){ if(chip.dataset.facet==='theatre') state.fTheatre=chip.dataset.val; else state.fVerdict=chip.dataset.val; renderSearch(); return; }
+    const bm = e.target.closest('[data-bm]');
+    if(bm){ e.stopPropagation(); toggleSave(bm.dataset.bm); flashSaved(bm); return; }
+    const card = e.target.closest('[data-id]');
+    if(card) openDetail(card.dataset.id);
+  });
 
   // serials taps (delegation) — same behaviour as the pack
   $("#serialsContent").addEventListener('click', e=>{
