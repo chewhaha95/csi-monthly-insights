@@ -813,6 +813,7 @@ const SUGGESTIONS_EXP = ["What changed for expeditionary this month?","How do we
                       or fix a vulnerability (doctrine, training, procurement)
    Each item: {t: headline, d: 1–2 line so-what, id: source serial}. */
 const FRAME_M = {
+  bluf:"June rewarded method over mass. <b>Opportunity:</b> adopt what is working elsewhere — graduated, deniable advances and a two-tier drone architecture no single EW answer defeats. <b>Vulnerability:</b> our own RF-only counter-drone, co-located command/logistics/comms, and a predictable CASEVAC the double-tap is built to exploit. <b>Capability development:</b> pre-authorise exploitation triggers, redesign the TAA and last-mile sustainment, and write follow-on-strike defeat into SOPs.",
   opportunities:[
     {t:"Graduated, deniable advance", d:"The IDF moved a ceasefire line 10 km north by pegging each small step to an adversary provocation and holding it under negotiation — a repeatable sub-threshold way to take ground without a decisive engagement.", id:"M-01"},
     {t:"Two-tier drone architecture that beats EW", d:"Ukraine paired an unjammable fibre-optic close layer (0–15 km) with an AI-autonomous deep layer (50–300 km) that no single EW solution defeats — a proven strike model for any drone-saturated approach.", id:"M-02"}
@@ -829,6 +830,7 @@ const FRAME_M = {
   ]
 };
 const FRAME_S = {
+  bluf:"June turned deep fires and air defence into an economics contest. <b>Opportunity:</b> route-denial 'fire control', cheap AI interceptors that win the cost-exchange, and the succession-and-finance window after a decapitation. <b>Vulnerability:</b> reactive target-servicing, spending SAMs on cheap drones, and an unfilled top-tier saturation gap. <b>Capability development:</b> rank the network and hit the repair effort, field a low-cost intercept layer, close the top tier, and stand up finance and succession collection.",
   opportunities:[
     {t:"Fire control as route denial", d:"Ukraine made five cities' logistics non-viable by denying routes rather than destroying them — cheaper and more durable — and kept nodes down by striking the repair effort, not just the span.", id:"S-01"},
     {t:"Cheap AI interceptors win the cost-exchange", d:"A ~$3,500 autonomous interceptor killed $20–50k Shaheds at ~95% and was re-tuned against a faster variant by software in weeks — a proven low-cost layer for the mass-drone tier.", id:"S-02"},
@@ -847,6 +849,7 @@ const FRAME_S = {
   ]
 };
 const FRAME_CSS = {
+  bluf:"June made combat support a signature-and-dependency fight. <b>Opportunity:</b> repair interdiction — deny repair rather than re-strike — and UGV logistics at scale. <b>Vulnerability:</b> our own detectable repair signature, a single-link UGV C2, and dependence on civilian power, water and comms. <b>Capability development:</b> time-box and decoy repairs, build a degraded-mode UGV C2, and give Signals an infrastructure audit and 72-hour standalone power.",
   opportunities:[
     {t:"Deny repair, don't re-strike", d:"Ukraine kept Crimea's arteries down by killing the repair effort — strike, confirm the repair order, then destroy the repair assets before they arrive — worth far more than repeatedly re-striking a span.", id:"CS-01"},
     {t:"UGV logistics at scale", d:"Tens of thousands of UGV missions moved thousands of tonnes and evacuated 600+ wounded where manned vehicles could not go (90% of Pokrovsk resupply) — the emerging model for contested last-mile logistics.", id:"CS-02"}
@@ -863,6 +866,7 @@ const FRAME_CSS = {
   ]
 };
 const FRAME_EXP = {
+  bluf:"June was a month of sub-threshold advance and drone-saturated approaches. <b>Opportunity:</b> the same methods to use ourselves — coordinated sub-threshold advance and baseline creep under active ceasefire. <b>Vulnerability:</b> sequential monitoring that misses the pattern, trusting the press release over the ground, predictable approaches that invite drone ambush, and infrastructure dependence. <b>Capability development:</b> simultaneous observation with pattern assessment, an instrumented ceasefire line, drone-corridor assessments, and a 72-hour self-sufficiency standard.",
   opportunities:[
     {t:"Coordinated sub-threshold advance", d:"Thailand added three facts on the ground in one day by keeping each action below the response threshold — a repeatable grey-zone method to advance a claim without triggering a response.", id:"EX-01"},
     {t:"Baseline creep under active ceasefire", d:"The IDF moved a line 10 km in under two months while ceasefires were repeatedly announced — a proven way to gain ground under the cover of negotiation.", id:"EX-02"}
