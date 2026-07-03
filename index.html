@@ -308,7 +308,7 @@ a{color:inherit}
 .ask-status.ready::before{content:"● ";color:var(--green)}
 .ask-examples{display:flex;flex-wrap:wrap;gap:8px;padding:2px 16px 12px}
 .serchip.ex{white-space:normal;font-family:var(--body);font-size:12.5px;letter-spacing:0}
-.ask-pane-thread{display:flex;flex-direction:column;gap:16px;padding:6px 16px 20px}
+.ask-pane-thread{display:flex;flex-direction:column;gap:16px;padding:6px 16px calc(90px + env(safe-area-inset-bottom))}
 .ask-pane-thread:empty{display:none}
 .ask-pane-thread .msg.user{align-self:flex-end;max-width:85%;background:var(--red);color:#fff;font-size:14px;line-height:1.4;padding:9px 13px;border-radius:14px 14px 4px 14px}
 .ask-pane-thread .ans-prose{font-size:14px;line-height:1.6;color:var(--ink);margin:8px 0 2px}
@@ -1046,7 +1046,12 @@ function initAsk(){
   _updateAskStatus();
   loadEmbedder(); // lazy, best-effort; falls back to keyword search if it can't load
 }
-function _scrollAskPane(){ const t=$("#askPaneThread"); if(t){ const last=t.lastElementChild; if(last) requestAnimationFrame(()=>last.scrollIntoView({block:'nearest'})); } }
+/* Scroll the newest message so its top sits just below the sticky top bar —
+   the thread's bottom padding keeps it clear of the fixed bottom nav. */
+function _scrollAskPane(){
+  const t=$("#askPaneThread"); if(!t) return; const last=t.lastElementChild; if(!last) return;
+  requestAnimationFrame(()=>{ const top = window.scrollY + last.getBoundingClientRect().top - 72; window.scrollTo({top:Math.max(0,top), behavior:'smooth'}); });
+}
 async function askAll(text){
   const q=(text||'').trim(); if(!q) return;
   state.lastAsk=q;
