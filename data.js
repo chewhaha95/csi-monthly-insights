@@ -813,75 +813,75 @@ const SUGGESTIONS_EXP = ["What changed for expeditionary this month?","How do we
                       or fix a vulnerability (doctrine, training, procurement)
    Each item: {t: headline, d: 1–2 line so-what, id: source serial}. */
 const FRAME_M = {
-  bluf:"June rewarded method over mass. <b>Opportunity:</b> adopt what is working elsewhere — graduated, deniable advances and a two-tier drone architecture no single EW answer defeats. <b>Vulnerability:</b> our own RF-only counter-drone, co-located command/logistics/comms, and a predictable CASEVAC the double-tap is built to exploit. <b>Capability development:</b> pre-authorise exploitation triggers, redesign the TAA and last-mile sustainment, and write follow-on-strike defeat into SOPs.",
+  bluf:"This month the wins came from how forces fought, not how big they were. <b>Opportunity:</b> Israel pushed a ceasefire line 10 km by taking steps too small to call an attack, and Ukraine flew two kinds of drone at once so jamming couldn't stop both. <b>Vulnerability:</b> our tanks can't stop a drone flown down a fibre-optic wire, we bunch our HQ, supplies and radios where one strike kills all three, and our casualty rescues run to a pattern the enemy's second strike is waiting for. <b>What to do:</b> agree in advance what lets us push forward, split those three things apart, hand the last few kilometres to robots, and rehearse rescues so the follow-up strike misses.",
   opportunities:[
-    {t:"Graduated, deniable advance", d:"The IDF moved a ceasefire line 10 km north by pegging each small step to an adversary provocation and holding it under negotiation — a repeatable sub-threshold way to take ground without a decisive engagement.", id:"M-01"},
-    {t:"Two-tier drone architecture that beats EW", d:"Ukraine paired an unjammable fibre-optic close layer (0–15 km) with an AI-autonomous deep layer (50–300 km) that no single EW solution defeats — a proven strike model for any drone-saturated approach.", id:"M-02"}
+    {t:"Take ground in steps too small to fight over", d:"Israel pushed a ceasefire line 10 km north by making each move look like a minor, one-off response — never big enough for the other side to hit back over. Small, deniable steps can win ground without a battle.", id:"M-01"},
+    {t:"Fly two kinds of drone so jamming can't stop both", d:"Ukraine flew short-range drones down a fibre-optic wire (nothing to jam) alongside long-range drones that fly themselves. No single jammer beats both — a drone setup worth copying wherever the sky is full of them.", id:"M-02"}
   ],
   vulnerabilities:[
-    {t:"RF jamming won't stop a fibre-optic FPV", d:"Armour that relies on electronic defeat is exposed to fibre-optic and optically-guided FPVs — there is no RF answer to the close layer.", id:"M-02"},
-    {t:"Co-located command, logistics and comms", d:"A TAA that clusters the three signatures is a single target for a no-signal AI deep strike; one strike removes two functions at once.", id:"M-02"},
-    {t:"Predictable CASEVAC invites the double-tap", d:"A telegraphed rescue and QRF response to a first strike is exactly what the follow-on missile is aimed at — current SOPs convert one strike into mass casualties.", id:"M-03"}
+    {t:"Our tanks can't stop a wired drone", d:"We rely on jamming to knock drones down. A drone flown down a fibre-optic wire, or steered by camera, ignores jamming completely — so right now our armour has no answer to it.", id:"M-02"},
+    {t:"We bunch HQ, supplies and radios together", d:"When the command post, the supply dump and the comms all sit in one place, a single long-range strike takes out all three at once. That cluster is an easy target.", id:"M-02"},
+    {t:"Our casualty rescues are predictable", d:"The enemy hits a position, waits, then strikes again about 40 minutes later — aimed at the rescue party. Because our rescues run to a set pattern, that second strike lands on people and turns one hit into many casualties.", id:"M-03"}
   ],
   capdev:[
-    {t:"Pre-authorise exploitation triggers", d:"Build an escalation-trigger matrix into the OPLAN so proportionate exploitation is a planned choice, and instrument our own limit-of-advance line against creep.", id:"M-01"},
-    {t:"Redesign the TAA and the last mile", d:"Rewrite TAA layout to separate command/logistics/comms, and adopt a manned-drop-off → UGV relay → UGV CASEVAC TTP for the 5–15 km approach zone.", id:"M-02"},
-    {t:"Codify follow-on-strike defeat", d:"Write a timed CASEVAC hold with UGV assessment and off-route QRF movement into force-protection SOPs, and add a physical/kinetic drone-defeat layer to mounted drills.", id:"M-03"}
+    {t:"Agree the rules for pushing forward before you go", d:"Decide ahead of time exactly what the enemy has to do before we're allowed to advance, so the call isn't made under pressure in the moment. And measure our own ceasefire lines the same way, so no one creeps up on us.", id:"M-01"},
+    {t:"Spread out, and let robots run the last few km", d:"Split the HQ, supplies and radios so one strike can't take two of them. In the last 5–15 km, where crewed trucks get hit, move supplies and carry the wounded on unmanned ground vehicles instead of people.", id:"M-02"},
+    {t:"Change how we run rescues — and add real drone defences", d:"Write a rule to wait out the enemy's second strike and check the site with a robot first, and move the reaction force off the obvious route. Fit tanks with physical drone defences — cages, nets, active protection — not just jammers.", id:"M-03"}
   ]
 };
 const FRAME_S = {
-  bluf:"June turned deep fires and air defence into an economics contest. <b>Opportunity:</b> route-denial 'fire control', cheap AI interceptors that win the cost-exchange, and the succession-and-finance window after a decapitation. <b>Vulnerability:</b> reactive target-servicing, spending SAMs on cheap drones, and an unfilled top-tier saturation gap. <b>Capability development:</b> rank the network and hit the repair effort, field a low-cost intercept layer, close the top tier, and stand up finance and succession collection.",
+  bluf:"This month, striking and air defence came down to money and priorities. <b>Opportunity:</b> Ukraine shut down an enemy's supply roads by blocking them (cheaper than flattening them) and hitting the repair crews so they stayed shut, and shot down cheap attack drones with even cheaper AI-guided ones. <b>Vulnerability:</b> we tend to hit targets as they pop up instead of ranking what matters, we waste expensive missiles on cheap drones, and we've no good answer to the fastest incoming missiles. <b>What to do:</b> rank the enemy's network and hit the repair crews, buy a cheap layer of interceptors for the swarms, and fix the gap against the fastest threats.",
   opportunities:[
-    {t:"Fire control as route denial", d:"Ukraine made five cities' logistics non-viable by denying routes rather than destroying them — cheaper and more durable — and kept nodes down by striking the repair effort, not just the span.", id:"S-01"},
-    {t:"Cheap AI interceptors win the cost-exchange", d:"A ~$3,500 autonomous interceptor killed $20–50k Shaheds at ~95% and was re-tuned against a faster variant by software in weeks — a proven low-cost layer for the mass-drone tier.", id:"S-02"},
-    {t:"The succession & finance window", d:"A decapitation only pays if the deputy layer and the money network are struck inside the 2–4 week window before a replacement embeds — an exploitable adversary vulnerability.", id:"S-03"}
+    {t:"Block supply roads instead of flattening them", d:"Ukraine choked the supply routes of five cities by keeping key crossings unusable — far cheaper than destroying everything — then hit the repair crews so the crossings stayed down. Denying a road beats cratering it.", id:"S-01"},
+    {t:"Shoot cheap drones down with something even cheaper", d:"A roughly $3,500 AI-guided interceptor knocked down $20–50k attack drones on its own, hitting about 95%. When the enemy fielded a faster drone, they fixed it with a software update in weeks. The maths finally favours the defender.", id:"S-02"},
+    {t:"After you kill the leader, go for the deputies and the money — fast", d:"Taking out a commander only sticks if you hit his deputies, bomb-makers and financiers in the two-to-four weeks before someone replaces him. Miss that window and the group just grows back.", id:"S-03"}
   ],
   vulnerabilities:[
-    {t:"Reactive target-servicing", d:"Servicing targets as they appear, instead of ranking the transport network for route denial, spends fires on low-leverage nodes.", id:"S-01"},
-    {t:"Expensive interceptors on cheap drones", d:"Firing SAMs at mass drones is a losing cost-exchange that empties the magazine before the real threat arrives.", id:"S-02"},
-    {t:"Top-tier saturation gap", d:"Cheap layers can't cover ballistic and hypersonic threats; a decoy-led composite raid depletes the magazine and strikes exactly the tier left open.", id:"S-04"}
+    {t:"We hit whatever pops up, not what matters most", d:"Servicing targets as they appear wastes firepower on low-value stuff. Without ranking the enemy's roads and supply network first, we spend rounds on the easy target instead of the one that really hurts.", id:"S-01"},
+    {t:"We spend expensive missiles on cheap drones", d:"Firing million-dollar missiles at hundreds of cheap drones is a losing trade — the launcher runs empty long before the drones do.", id:"S-02"},
+    {t:"We can't stop the fastest incoming missiles", d:"Enemies now send a mix — decoys first to soak up our interceptors, then cruise, ballistic and hypersonic missiles. Cheap defences can't touch the fast top end, and that's exactly the gap they aim at.", id:"S-04"}
   ],
   capdev:[
-    {t:"Adopt fire control + a network priority list", d:"Add 'fire control over a route' to the objective set, build a Transport Network Disruption Priority List, and plan the Phase 2 strike on the repair effort into every interdiction serial.", id:"S-01"},
-    {t:"Field a low-cost intercept layer", d:"Assign a low-cost/AI interceptor to the mass-drone tier, reserve SAMs for the top tier, and stand up the software-retraining pipeline that keeps pace with new variants.", id:"S-02"},
-    {t:"Close the top tier, build a decoy-led package", d:"Stress-test GBAD against a composite raid to find where the magazine exhausts, prioritise closing that tier, and design a decoy-led offensive strike package of our own.", id:"S-04"},
-    {t:"Stand up succession & finance collection", d:"Hold a parallel financial-network map for every priority target and a 24-hour succession-window collection posture that activates on an HVI kill.", id:"S-03"}
+    {t:"Rank the network, then hit the repair crews", d:"List the enemy's crossings and junctions by how much damage losing each one does, and strike the top of that list first. Then plan a second strike on the repair effort, so what you knock out stays out.", id:"S-01"},
+    {t:"Buy a cheap interceptor layer for the swarms", d:"Put low-cost, AI-guided interceptors against mass drones and save the expensive missiles for the fast threats. Keep a small software team retraining them so they keep up as the drones change.", id:"S-02"},
+    {t:"Close the gap against the fastest missiles", d:"Test our air defence against a full mixed raid and find where it runs out of interceptors — then fix that layer first. And build our own decoy-led strike package to do the same to them.", id:"S-04"},
+    {t:"Track the deputies and the money before you need to", d:"Keep a live map of a target group's money network and next-in-line leaders ready ahead of time, so when a leader is killed we can act inside the short window before the group recovers.", id:"S-03"}
   ]
 };
 const FRAME_CSS = {
-  bluf:"June made combat support a signature-and-dependency fight. <b>Opportunity:</b> repair interdiction — deny repair rather than re-strike — and UGV logistics at scale. <b>Vulnerability:</b> our own detectable repair signature, a single-link UGV C2, and dependence on civilian power, water and comms. <b>Capability development:</b> time-box and decoy repairs, build a degraded-mode UGV C2, and give Signals an infrastructure audit and 72-hour standalone power.",
+  bluf:"This month, engineering and comms were about hiding what you're doing and not depending on any one thing. <b>Opportunity:</b> Ukraine kept bridges down not by re-bombing them but by killing the repair crews, and moved huge amounts of supply and wounded on unmanned ground vehicles where trucks couldn't survive. <b>Vulnerability:</b> our own repair work is easy to spot and hit, our robots lean on a single Starlink link with no backup, and our bases depend on civilian power and water an enemy can switch off. <b>What to do:</b> repair fast and hidden, give the robots a backup way to be controlled, and make sure comms have their own power and a plan for when the grid goes down.",
   opportunities:[
-    {t:"Deny repair, don't re-strike", d:"Ukraine kept Crimea's arteries down by killing the repair effort — strike, confirm the repair order, then destroy the repair assets before they arrive — worth far more than repeatedly re-striking a span.", id:"CS-01"},
-    {t:"UGV logistics at scale", d:"Tens of thousands of UGV missions moved thousands of tonnes and evacuated 600+ wounded where manned vehicles could not go (90% of Pokrovsk resupply) — the emerging model for contested last-mile logistics.", id:"CS-02"}
+    {t:"Keep a bridge down by hitting the repair crew", d:"Ukraine wrecked a bridge, waited for the enemy to send repair teams and gear, then hit those — so it stayed unusable. Killing the repair effort is worth far more than bombing the same bridge over and over.", id:"CS-01"},
+    {t:"Move supply and wounded on robots where trucks die", d:"Ukraine ran tens of thousands of unmanned-ground-vehicle trips — moving supplies and carrying out 600+ wounded — where crewed vehicles couldn't survive. Near Pokrovsk, 9 in 10 resupply runs were unmanned. It's how to keep the last mile moving under fire.", id:"CS-02"}
   ],
   vulnerabilities:[
-    {t:"A detectable repair signature", d:"Our own persistent, predictable repair deployments at contested crossings are a targeting gift — the same interdiction method works against us.", id:"CS-01"},
-    {t:"Single-link UGV command", d:"A UGV fleet dependent on one Starlink link with no degraded mode, and no UGV-specific passability standard, are single points of failure.", id:"CS-02"},
-    {t:"Civilian-infrastructure dependence", d:"El Obeid showed a garrison can be collapsed through its power → water → comms chain without a ground assault; any position reliant on civilian infrastructure is exposed.", id:"CS-03"}
+    {t:"Our repair work is easy to spot and hit", d:"If our crews sit at a crossing repairing it in the open, to a routine, the enemy can do to us exactly what we'd do to them — wait and strike the repair. Our repair pattern is a target.", id:"CS-01"},
+    {t:"Our supply robots rely on one link", d:"The robot fleet runs on a single Starlink connection with no fallback, and we've no standard for which routes they can actually cross. Lose the link or pick a bad route and the whole thing stalls.", id:"CS-02"},
+    {t:"Our bases run on civilian power and water", d:"In Sudan, attackers collapsed a garrison by knocking out its city power, then water, then phones — no ground assault needed. Any base leaning on civilian utilities can be shut down the same way.", id:"CS-03"}
   ],
   capdev:[
-    {t:"Repair discipline + repair-node targeting", d:"Impose a 90-minute, decoyed, low-signature repair discipline, and build repair-node targeting into interdiction planning.", id:"CS-01"},
-    {t:"Degraded-mode UGV C2 + passability recce", d:"Produce a non-Starlink UGV command SOP that survives a link drop, and add UGV passability to route reconnaissance.", id:"CS-02"},
-    {t:"Infrastructure audit + 72-hour Signals power", d:"Make an infrastructure vulnerability audit and 72-hour standalone Signals power a pre-deployment standard against the El Obeid failure chain.", id:"CS-03"}
+    {t:"Repair fast, hidden, and with a decoy", d:"Set a hard time limit on repairs, work a decoy site alongside, and leave no lasting trace so crews can't be tracked and hit. And build 'hit the repair crew' into our own targeting when we're the ones cutting a route.", id:"CS-01"},
+    {t:"Give the robots a backup control link", d:"Write a way to keep the unmanned vehicles running when Starlink drops, and check routes for whether the robots can actually get through before we rely on them.", id:"CS-02"},
+    {t:"Give comms their own power and a grid-down plan", d:"Before deploying, map what the base depends on — power, water, phones — and give the comms at least 72 hours of their own power, so losing the town's grid doesn't take out command.", id:"CS-03"}
   ]
 };
 const FRAME_EXP = {
-  bluf:"June was a month of sub-threshold advance and drone-saturated approaches. <b>Opportunity:</b> the same methods to use ourselves — coordinated sub-threshold advance and baseline creep under active ceasefire. <b>Vulnerability:</b> sequential monitoring that misses the pattern, trusting the press release over the ground, predictable approaches that invite drone ambush, and infrastructure dependence. <b>Capability development:</b> simultaneous observation with pattern assessment, an instrumented ceasefire line, drone-corridor assessments, and a 72-hour self-sufficiency standard.",
+  bluf:"This month was about slow, quiet land-grabs and skies full of drones. <b>Opportunity:</b> Thailand grabbed ground with several small moves in one day, each too minor to trigger a response, and Israel walked a ceasefire line forward over weeks while truces were being announced — both worth understanding and using. <b>Vulnerability:</b> watching events one at a time misses a coordinated creep, we trust official statements over the real line on the ground, our predictable routes walk troops into drone ambushes, and outposts that lean on local power can be starved out. <b>What to do:</b> watch everything at once and join the dots, measure the real line yourself, treat every obvious route as a drone trap, and make outposts able to run themselves for 72 hours.",
   opportunities:[
-    {t:"Coordinated sub-threshold advance", d:"Thailand added three facts on the ground in one day by keeping each action below the response threshold — a repeatable grey-zone method to advance a claim without triggering a response.", id:"EX-01"},
-    {t:"Baseline creep under active ceasefire", d:"The IDF moved a line 10 km in under two months while ceasefires were repeatedly announced — a proven way to gain ground under the cover of negotiation.", id:"EX-02"}
+    {t:"Grab ground with lots of small moves at once", d:"At O'Smach, Thailand made three separate moves in a single day — each too minor to fight over, but together a real advance. You only see it if you read the moves as one plan. Worth understanding, and using.", id:"EX-01"},
+    {t:"Walk a line forward while everyone talks ceasefire", d:"Israel moved a boundary 10 km over a couple of months while ceasefires were being announced the whole time. Steady creep under the cover of talks is a proven way to gain ground.", id:"EX-02"}
   ],
   vulnerabilities:[
-    {t:"Sequential monitoring misses the pattern", d:"Incident-by-incident observation cannot see a coordinated sub-threshold advance; only cumulative pattern assessment reveals it.", id:"EX-01"},
-    {t:"Trusting the press release over the ground", d:"Without a measured line-to-position gap, a moving ceasefire line is invisible — public statements lag the truth.", id:"EX-02"},
-    {t:"Predictable approaches are drone ambushes", d:"A telegraphed approach to high ground or a tunnel exit is now a pre-positioned drone ambush, cued by real-time ISR on our announced movements.", id:"EX-03"},
-    {t:"Infrastructure dependence & protected-status complacency", d:"A besieged position degraded through its infrastructure survives only on self-sufficiency; observer or protected status deters nothing.", id:"EX-04"}
+    {t:"Watching events one at a time hides the real plan", d:"If we log each incident on its own, a coordinated creep slips past us. You only catch it by adding the incidents up and looking for the pattern.", id:"EX-01"},
+    {t:"We trust the statement over the ground", d:"Unless we measure the actual gap between the agreed line and where the enemy really is, a line that's quietly moving looks fine on paper. The press release always lags the truth.", id:"EX-02"},
+    {t:"Our predictable routes are drone traps", d:"Enemies now pre-position drones on the obvious approaches to high ground and at tunnel exits, watching our announced moves in real time. A telegraphed route walks troops into an ambush.", id:"EX-03"},
+    {t:"Outposts that lean on local power get starved out", d:"A base cut off and worn down through its power, fuel and water can't hold on by being 'protected' or watched by observers — only being able to run itself keeps it in the fight.", id:"EX-04"}
   ],
   capdev:[
-    {t:"Simultaneous observation + pattern assessment", d:"Redesign observation to cover sub-threshold categories at once and make cumulative pattern assessment a mandatory reporting output.", id:"EX-01"},
-    {t:"Instrument the ceasefire line", d:"Track the line as a coordinate gap to the adversary's forward position, with a 2-hour escalation-trigger report against the ground truth.", id:"EX-02"},
-    {t:"Drone-corridor assessment + tunnel-exit overwatch", d:"Make a drone-threat-corridor assessment and tunnel-exit overwatch mandatory in assault SOPs, and suppress the last 500 m of the approach.", id:"EX-03"},
-    {t:"72-hour self-sufficiency standard", d:"Set 72-hour power-independent operations and air-threat force protection as the standard for Commandos and Guards.", id:"EX-04"}
+    {t:"Watch everything at once and join the dots", d:"Set up observation to cover all the small stuff at the same time, and make 'here's the overall pattern' a required part of every report — not just a list of separate incidents.", id:"EX-01"},
+    {t:"Measure the real line yourself", d:"Track the actual distance between the agreed line and the enemy's forward positions, and send a quick alert whenever it moves — go by the ground, not the announcement.", id:"EX-02"},
+    {t:"Treat every obvious route as a drone trap", d:"Before an assault, work out where drones are likely waiting, keep watch on tunnel exits, and clear the last 500 m of the approach. Assume the easy path is watched.", id:"EX-03"},
+    {t:"Make outposts self-sufficient for 72 hours", d:"Set a standard that any outpost can run on its own power and hold off air threats for at least three days, so cutting the local grid doesn't fold it.", id:"EX-04"}
   ]
 };
 const PKG = {
