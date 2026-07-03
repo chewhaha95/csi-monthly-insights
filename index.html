@@ -308,23 +308,25 @@ a{color:inherit}
 .ask-status.ready::before{content:"● ";color:var(--green)}
 .ask-examples{display:flex;flex-wrap:wrap;gap:8px;padding:2px 16px 12px}
 .serchip.ex{white-space:normal;font-family:var(--body);font-size:12.5px;letter-spacing:0}
-.ask-pane-thread{display:flex;flex-direction:column;gap:16px;padding:6px 16px calc(var(--navH,66px) + 78px)}
-/* Ask input docked at the bottom, above the nav (chat-style). --navH is the
-   measured bottom-nav height (includes the safe-area inset), set in init(). */
-.ask-dock{position:fixed;left:0;right:0;bottom:var(--navH,66px);max-width:480px;margin:0 auto;z-index:61;display:none;gap:8px;padding:9px 12px;background:var(--bg);border-top:1px solid var(--line)}
+/* Ask pane as a fixed chat container: it fills the space from below the top
+   bar to above the nav, the message thread scrolls INSIDE it, and the input is
+   pinned at its bottom — so the page itself never scrolls and the on-screen
+   keyboard can't shove it up. --barH/--navH are measured heights; --kb is the
+   keyboard height (VisualViewport). */
+#pane-search.on{display:flex;flex-direction:column;position:fixed;top:var(--barH,56px);left:0;right:0;bottom:var(--navH,66px);max-width:480px;margin:0 auto;background:var(--bg);z-index:40;overflow:hidden}
+.app.kbd #pane-search.on{bottom:var(--kb,0px)}
+#pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>#askStatus,#pane-search>#askExamples,#pane-search>#searchFacets{flex:0 0 auto}
+.ask-pane-thread{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:16px;padding:10px 16px 12px}
+.ask-pane-thread>*:first-child{margin-top:auto}
+/* input row, in-flow at the bottom of the chat container */
+.ask-dock{flex:0 0 auto;display:none;gap:8px;padding:9px 12px;background:var(--bg);border-top:1px solid var(--line)}
 .ask-dock.on{display:flex;align-items:center}
 .ask-dock input{flex:1 1 auto;min-width:0;font-family:var(--body);font-size:15px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:22px;padding:11px 16px;outline:none;-webkit-appearance:none}
 .ask-dock input::placeholder{color:var(--text-3)}
 .ask-dock input:focus{border-color:var(--red)}
 .ask-send{flex:0 0 auto;width:40px;height:40px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center}
 .ask-send svg{width:19px;height:19px}
-/* while typing: hide the nav and drop the input to just above the keyboard, so
-   focusing the field shifts the page only a little instead of lifting the whole
-   bottom cluster (input + nav) above the keyboard */
 .app.kbd .bottomnav{display:none}
-.app.kbd .ask-dock{bottom:var(--kb,0px)}
-.app.kbd .ask-pane-thread{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
-.ask-pane-thread:empty{display:none}
 .ask-pane-thread .msg.user{align-self:flex-end;max-width:85%;background:var(--red);color:#fff;font-size:14px;line-height:1.4;padding:9px 13px;border-radius:14px 14px 4px 14px}
 .ask-pane-thread .ans-prose{font-size:14px;line-height:1.6;color:var(--ink);margin:8px 0 2px}
 .ask-pane-thread .cite{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--red);white-space:nowrap;vertical-align:1px}
@@ -694,6 +696,10 @@ a{color:inherit}
       <div id="askExamples" class="ask-examples"></div>
       <div id="searchFacets"></div>
       <div id="askPaneThread" class="ask-pane-thread"></div>
+      <form id="askDock" class="ask-dock" autocomplete="off">
+        <input id="searchInput" type="search" inputmode="search" enterkeyhint="send" autocomplete="off" placeholder="Ask about drones, Sudan, what worked…" aria-label="Ask the digest">
+        <button type="submit" class="ask-send" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </form>
     </div>
 
     <!-- ABOUT -->
@@ -760,11 +766,6 @@ a{color:inherit}
     </div>
   </section>
 
-  <!-- ============ ASK INPUT DOCK (bottom, above the nav) ============ -->
-  <form id="askDock" class="ask-dock" autocomplete="off">
-    <input id="searchInput" type="search" inputmode="search" enterkeyhint="send" autocomplete="off" placeholder="Ask about drones, Sudan, what worked…" aria-label="Ask the digest">
-    <button type="submit" class="ask-send" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-  </form>
 
   <!-- ============ BOTTOM NAV ============ -->
   <nav class="bottomnav">
@@ -1066,12 +1067,9 @@ function initAsk(){
   _updateAskStatus();
   loadEmbedder(); // lazy, best-effort; falls back to keyword search if it can't load
 }
-/* Scroll the newest message so its top sits just below the sticky top bar —
-   the thread's bottom padding keeps it clear of the fixed bottom nav. */
-function _scrollAskPane(){
-  const t=$("#askPaneThread"); if(!t) return; const last=t.lastElementChild; if(!last) return;
-  requestAnimationFrame(()=>{ const top = window.scrollY + last.getBoundingClientRect().top - 72; window.scrollTo({top:Math.max(0,top), behavior:'smooth'}); });
-}
+/* The thread scrolls inside the fixed chat container — just keep it pinned to
+   the newest message at the bottom. */
+function _scrollAskPane(){ const t=$("#askPaneThread"); if(t) requestAnimationFrame(()=>{ t.scrollTop=t.scrollHeight; }); }
 async function askAll(text){
   const q=(text||'').trim(); if(!q) return;
   state.lastAsk=q;
@@ -1384,6 +1382,7 @@ function showSection(sec){
   document.querySelectorAll('.nav-item').forEach(n=>n.setAttribute('aria-current', n.dataset.sec===sec?'true':'false'));
   $("#tabsWrap").style.display = sec==="feed"? "block":"none";
   $("#askDock") && $("#askDock").classList.toggle('on', sec==='search');
+  _setBarH();
   if(sec!=="feed"){ state.savedOnly=false; updateSavedIcon(); }
   window.scrollTo(0,0);
 }
@@ -1536,11 +1535,13 @@ function buildChecklist(){
 
 /* ===================== WIRING ===================== */
 function _setNavH(){ const n=$(".bottomnav"); if(n) document.documentElement.style.setProperty('--navH', n.offsetHeight+'px'); }
+function _setBarH(){ const b=$(".topbar"); if(b) document.documentElement.style.setProperty('--barH', b.offsetHeight+'px'); }
+function _setBars(){ _setNavH(); _setBarH(); }
 function init(){
   buildMerged();
   loadPackage(state.tab);
   buildTabs(); renderFeed(); renderSerials();
-  _setNavH(); window.addEventListener('resize', _setNavH); window.addEventListener('orientationchange', ()=>setTimeout(_setNavH,200));
+  _setBars(); window.addEventListener('resize', _setBars); window.addEventListener('orientationchange', ()=>setTimeout(_setBars,200));
   { const th = new Set(ALL_SERIALS.map(s=>s.theatre)).size;
     $("#popCount").textContent = ALL_SERIALS.length + " serials";
     $("#popScope").textContent = `across all four packages — Manoeuvre, Sense & Strike, Combat Support & Expeditionary — spanning ${th} reporting theatre${th===1?'':'s'}.`; }
