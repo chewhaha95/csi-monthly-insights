@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#F1EDE3">
 <script>(function(){try{var t=localStorage.getItem('csi-theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="manifest" href="./manifest.webmanifest">
@@ -318,6 +318,12 @@ a{color:inherit}
 .ask-dock input:focus{border-color:var(--red)}
 .ask-send{flex:0 0 auto;width:40px;height:40px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center}
 .ask-send svg{width:19px;height:19px}
+/* while typing: hide the nav and drop the input to just above the keyboard, so
+   focusing the field shifts the page only a little instead of lifting the whole
+   bottom cluster (input + nav) above the keyboard */
+.app.kbd .bottomnav{display:none}
+.app.kbd .ask-dock{bottom:0}
+.app.kbd .ask-pane-thread{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 .ask-pane-thread:empty{display:none}
 .ask-pane-thread .msg.user{align-self:flex-end;max-width:85%;background:var(--red);color:#fff;font-size:14px;line-height:1.4;padding:9px 13px;border-radius:14px 14px 4px 14px}
 .ask-pane-thread .ans-prose{font-size:14px;line-height:1.6;color:var(--ink);margin:8px 0 2px}
@@ -1553,6 +1559,9 @@ function init(){
   document.querySelectorAll('.nav-item').forEach(n=> n.onclick=()=>{ state.savedOnly=false; updateSavedIcon(); showSection(n.dataset.sec); if(n.dataset.sec==='feed') renderFeed(); if(n.dataset.sec==='serials') renderSerials(); if(n.dataset.sec==='search') initAsk(); });
   const _si=$("#searchInput"); const _askForm=$("#askDock");
   if(_askForm) _askForm.addEventListener('submit', e=>{ e.preventDefault(); const v=_si.value; _si.value=''; _si.blur(); askAll(v); });
+  if(_si){ const _app=document.querySelector('.app');
+    _si.addEventListener('focus', ()=>_app.classList.add('kbd'));
+    _si.addEventListener('blur', ()=>_app.classList.remove('kbd')); }
   $("#pane-search").addEventListener('click', e=>{
     const ex=e.target.closest('[data-ask]');
     if(ex){ if(_si){ _si.value=''; _si.blur(); } askAll(ex.dataset.ask); return; }
