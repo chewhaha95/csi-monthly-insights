@@ -1064,6 +1064,7 @@ async function askAll(text){
   ASKP.thread=ASKP.thread.filter(m=>!m.temp);
   ASKP.thread.push({role:'bot',html:synthAll(answerForAll(q, sem))});
   _renderPaneThread(); _scrollAskPane();
+  setTimeout(_scrollAskPane, 320); // re-position once the mobile keyboard has finished closing
 }
 /* facet change re-scopes the most recent answer in place (same query → reuse its embedding scores) */
 function _reanswer(){ if(!state.lastAsk) return;
@@ -1531,10 +1532,10 @@ function init(){
 
   // bottom nav
   document.querySelectorAll('.nav-item').forEach(n=> n.onclick=()=>{ state.savedOnly=false; updateSavedIcon(); showSection(n.dataset.sec); if(n.dataset.sec==='feed') renderFeed(); if(n.dataset.sec==='serials') renderSerials(); if(n.dataset.sec==='search') initAsk(); });
-  const _si=$("#searchInput"); if(_si) _si.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); askAll(_si.value); _si.value=''; } });
+  const _si=$("#searchInput"); if(_si) _si.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); const v=_si.value; _si.value=''; _si.blur(); askAll(v); } });
   $("#pane-search").addEventListener('click', e=>{
     const ex=e.target.closest('[data-ask]');
-    if(ex){ if(_si) _si.value=''; askAll(ex.dataset.ask); return; }
+    if(ex){ if(_si){ _si.value=''; _si.blur(); } askAll(ex.dataset.ask); return; }
     const chip=e.target.closest('[data-facet]');
     if(chip){ if(chip.dataset.facet==='theatre') state.fTheatre=chip.dataset.val; else state.fVerdict=chip.dataset.val; $("#searchFacets").innerHTML=searchFacetsHTML(); _reanswer(); return; }
     const op=e.target.closest('[data-open]');
