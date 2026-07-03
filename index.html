@@ -1348,11 +1348,16 @@ function reflowBrief(htmlString){
   const src = `<div class="wk-src">Source: <a href="${WEEKLY_BASE}${state.weekUrl==='/'?'/':state.weekUrl}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div>`;
   return src + wrap.innerHTML;
 }
-function renderWeekly(){
+async function renderWeekly(){
   const c = $("#feedContent");
   if(state.weekUrl){ selectWeek({url:state.weekUrl, label:state.weekLabel}); return; }
-  c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Pick a week from the <b>Weekly Briefs ▾</b> menu to read that week's brief here.</p></div></div>`;
+  // First open: default to the latest brief so the reader shows content
+  // immediately — no need to pick a week from the menu.
+  c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Loading the latest brief…</p></div></div>`;
   bindWeekHead();
+  const weeks = await loadWeekList();
+  if(weeks && weeks.length){ selectWeek(weeks[0]); }
+  else { c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Pick a week from the <b>Weekly Briefs ▾</b> menu to read that week's brief here.</p></div></div>`; bindWeekHead(); }
 }
 
 /* ===================== CHECKLIST ===================== */
