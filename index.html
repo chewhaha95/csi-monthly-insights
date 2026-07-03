@@ -338,6 +338,7 @@ a{color:inherit}
 .pack-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
 .pack-title{font-family:var(--disp);font-weight:700;font-size:27px;line-height:1.16;letter-spacing:-.01em;color:var(--text);margin-bottom:12px}
 .pack-lede{font-size:14.5px;line-height:1.55;color:var(--text-2)}
+.pack-lede b{color:var(--text);font-weight:700}
 .statcards{display:flex;gap:9px;margin-top:17px}
 .statcard{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px 11px}
 .sc-k{font-family:var(--mono);font-size:8px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);line-height:1.35;min-height:22px}
@@ -1151,7 +1152,7 @@ function packHTML(){
   let h = `<div class="pack-head">
     <div class="pack-kicker">${PACK.kicker}</div>
     <h1 class="pack-title">What changed this month ${PACK.titleLine||'for the formation'}.</h1>
-    <p class="pack-lede">${PACK.commandLens}</p>
+    <p class="pack-lede">${F.bluf || PACK.commandLens}</p>
   </div>`;
   h += frameSectionHTML('opp','Opportunities','External enablers &amp; trends to leverage', F.opportunities);
   h += frameSectionHTML('vuln','Vulnerabilities','Current risks &amp; gaps to close', F.vulnerabilities);
