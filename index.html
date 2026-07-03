@@ -322,7 +322,7 @@ a{color:inherit}
    focusing the field shifts the page only a little instead of lifting the whole
    bottom cluster (input + nav) above the keyboard */
 .app.kbd .bottomnav{display:none}
-.app.kbd .ask-dock{bottom:0}
+.app.kbd .ask-dock{bottom:var(--kb,0px)}
 .app.kbd .ask-pane-thread{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 .ask-pane-thread:empty{display:none}
 .ask-pane-thread .msg.user{align-self:flex-end;max-width:85%;background:var(--red);color:#fff;font-size:14px;line-height:1.4;padding:9px 13px;border-radius:14px 14px 4px 14px}
@@ -1559,9 +1559,15 @@ function init(){
   document.querySelectorAll('.nav-item').forEach(n=> n.onclick=()=>{ state.savedOnly=false; updateSavedIcon(); showSection(n.dataset.sec); if(n.dataset.sec==='feed') renderFeed(); if(n.dataset.sec==='serials') renderSerials(); if(n.dataset.sec==='search') initAsk(); });
   const _si=$("#searchInput"); const _askForm=$("#askDock");
   if(_askForm) _askForm.addEventListener('submit', e=>{ e.preventDefault(); const v=_si.value; _si.value=''; _si.blur(); askAll(v); });
-  if(_si){ const _app=document.querySelector('.app');
-    _si.addEventListener('focus', ()=>_app.classList.add('kbd'));
-    _si.addEventListener('blur', ()=>_app.classList.remove('kbd')); }
+  if(_si){ const _app=document.querySelector('.app'), _root=document.documentElement, vv=window.visualViewport;
+    // Pin the dock to the top of the on-screen keyboard. iOS shrinks only the
+    // visual viewport (not window.innerHeight), so the gap below it is the
+    // keyboard height; keep the dock there via a --kb variable.
+    const _kb=()=>{ if(!vv||!_app.classList.contains('kbd')) return; const h=Math.max(0, window.innerHeight - vv.height - vv.offsetTop); _root.style.setProperty('--kb', h+'px'); };
+    _si.addEventListener('focus', ()=>{ _app.classList.add('kbd'); _kb(); });
+    _si.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _root.style.setProperty('--kb','0px'); });
+    if(vv){ vv.addEventListener('resize', _kb); vv.addEventListener('scroll', _kb); }
+  }
   $("#pane-search").addEventListener('click', e=>{
     const ex=e.target.closest('[data-ask]');
     if(ex){ if(_si){ _si.value=''; _si.blur(); } askAll(ex.dataset.ask); return; }
