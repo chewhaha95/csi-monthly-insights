@@ -347,22 +347,6 @@ a{color:inherit}
 .psec-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
 .psec-title{font-family:var(--disp);font-weight:700;font-size:21px;color:var(--text);letter-spacing:-.005em}
 .psec-right{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);text-align:right;flex:0 0 auto}
-/* three command sections (Opportunities / Vulnerabilities / Capability Development) */
-.psec.fs{background:none;border:none;padding:0;margin:24px 0 0}
-.psec.fs .psec-head{margin:0 16px 11px}
-.psec.fs .psec-title{display:flex;align-items:center;gap:9px}
-.psec.fs .psec-title::before{content:"";width:10px;height:10px;border-radius:50%;flex:0 0 auto;background:var(--line-2)}
-.fs-opp .psec-title::before{background:#3f7d54}
-.fs-vuln .psec-title::before{background:var(--red)}
-.fs-cap .psec-title::before{background:#3a6ea5}
-.fcard{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line-2);border-radius:12px;padding:13px 15px 12px;margin:0 16px 9px}
-.fs-opp .fcard{border-left-color:#3f7d54}
-.fs-vuln .fcard{border-left-color:var(--red)}
-.fs-cap .fcard{border-left-color:#3a6ea5}
-.fc-t{font-family:var(--disp);font-weight:700;font-size:16px;line-height:1.25;color:var(--text);margin-bottom:5px}
-.fc-d{font-family:var(--body);font-size:13.5px;line-height:1.55;color:var(--text-2);margin:0 0 9px}
-.fc-src{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;color:var(--text-3);background:none;border:none;padding:0;cursor:pointer;text-align:left;line-height:1.35}
-.fc-src:hover{color:var(--red)}
 .lens-card{font-size:14.5px;line-height:1.56;color:var(--text)}
 .wf-list{display:flex;flex-direction:column;gap:10px}
 .wf-item{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--raise)}
@@ -454,9 +438,14 @@ a{color:inherit}
 .ict-std p{font-size:13px;line-height:1.48;color:#2A2620}
 
 .srcs{margin-top:22px;border-top:1px solid var(--line);padding-top:15px}
-.srcs .sh{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-3);margin-bottom:9px}
-.srcs a{display:block;font-family:var(--mono);font-size:12px;color:var(--steel);text-decoration:none;padding:6px 0;border-bottom:1px solid var(--line);word-break:break-word}
-.srcs a span{color:var(--text-3)}
+.srcs .sh{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--red);margin-bottom:3px}
+.srcs .sh-sub{font-family:var(--body);font-size:12.5px;line-height:1.4;color:var(--text-3);margin-bottom:10px}
+.srcs a{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;color:var(--steel);text-decoration:none;padding:11px 0;border-bottom:1px solid var(--line);word-break:break-word}
+.srcs a .src-n{flex:0 0 auto;color:var(--text-3)}
+.srcs a .src-name{flex:1 1 auto}
+.srcs a .src-go{flex:0 0 auto;color:var(--red);font-size:13px}
+.srcs a:hover{color:var(--red)}
+.srcs a:hover .src-name{text-decoration:underline;text-underline-offset:2px}
 .srcs a:active{color:var(--text)}
 .dt-foot{margin-top:24px;text-align:center}
 .dt-foot button{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-2);border:1px solid var(--line-2);padding:11px 20px;border-radius:6px}
@@ -743,7 +732,7 @@ a{color:inherit}
 <script src="data.js"></script>
 <script>
 /* ===================== RENDER ===================== */
-let SERIALS, PACK, FRAME, PLANNING, KEY_JUDGEMENTS, FORMATIONS, BLUF_TEXT, SUGGESTIONS, _FMK;
+let SERIALS, PACK, PLANNING, KEY_JUDGEMENTS, FORMATIONS, BLUF_TEXT, SUGGESTIONS, _FMK;
 let SUMMARY={}, SIGNAL={}, APP={}, ICT={}, LEARN={}, FORMATIONS_ALL={}, ALL_SERIALS=[], PKG_OF={};
 function buildMerged(){
   SUMMARY={}; SIGNAL={}; APP={}; ICT={}; LEARN={}; FORMATIONS_ALL={}; ALL_SERIALS=[]; PKG_OF={};
@@ -769,7 +758,7 @@ function buildIndexAll(){
 function loadPackage(tab){
   const d = PKG[tab] || PKG.MANOEUVRE;
   SERIALS=d.SERIALS;
-  PACK=d.PACK; FRAME=d.FRAME; PLANNING=d.PLANNING; KEY_JUDGEMENTS=d.KEY_JUDGEMENTS; FORMATIONS=d.FORMATIONS;
+  PACK=d.PACK; PLANNING=d.PLANNING; KEY_JUDGEMENTS=d.KEY_JUDGEMENTS; FORMATIONS=d.FORMATIONS;
   BLUF_TEXT=d.BLUF; SUGGESTIONS=d.SUGGESTIONS; _FMK=d.FMK;
   buildIndex();
 }
@@ -1128,29 +1117,20 @@ function contestsHTML(){
   </div>`).join('');
 }
 function noteListHTML(items, note){ return `<div class="wf-list">${items.map(t=>`<div class="wf-item"><div class="wf-t">${t}</div><div class="wf-n">${note}</div></div>`).join('')}</div>`; }
-/* The three command sections. Each item links to its source serial, where the
-   full breakdown (decision cards, ICT, sources) lives — keeping the overview
-   scannable. */
-function frameCardHTML(item){
-  const s = ALL_SERIALS.find(x=>x.id===item.id);
-  const src = s ? `<button class="fc-src" data-id="${item.id}">${s.title} · SER ${item.id} →</button>` : '';
-  return `<div class="fcard"><div class="fc-t">${item.t}</div><p class="fc-d">${item.d}</p>${src}</div>`;
-}
-function frameSectionHTML(cls, title, sub, items){
-  if(!items || !items.length) return '';
-  return `<section class="psec fs fs-${cls}"><div class="psec-head"><h2 class="psec-title">${title}</h2><span class="psec-right">${sub}</span></div>${items.map(frameCardHTML).join('')}</section>`;
-}
 function packHTML(){
-  const F = FRAME || {};
   let h = `<div class="pack-head">
     <div class="pack-kicker">${PACK.kicker}</div>
     <h1 class="pack-title">What changed this month ${PACK.titleLine||'for the formation'}.</h1>
-    <p class="pack-lede">${PACK.commandLens}</p>
+    <p class="pack-lede">${PACK.changed}</p>
   </div>`;
-  h += frameSectionHTML('opp','Opportunities','External enablers &amp; trends to leverage', F.opportunities);
-  h += frameSectionHTML('vuln','Vulnerabilities','Current risks &amp; gaps to close', F.vulnerabilities);
-  h += frameSectionHTML('cap','Capability Development','Deliberate actions — doctrine, training, procurement', F.capdev);
-  h += `<div class="feedfoot"><p>This pack distils the <b>Conflict Studies &amp; Insights</b> weekly briefs into a formation-ready monthly learning pack. Open any serial for its full breakdown, decision cards and ICT.</p><a href="${WEEKLY_URL}" target="_blank" rel="noopener">Read the weekly brief →</a></div>`;
+  h += secOpen('Formation priorities','Focus this month') + PACK.priorities.map(id=>learnCardHTML(id,true)).join('') + `</section>`;
+  h += secOpen('Brigade implications','Meaning by echelon') + `<div class="impl">${implMatrixHTML()}</div></section>`;
+  h += secOpen('What worked','Observed strengths') + noteListHTML(PACK.worked,'Observed value this month') + `</section>`;
+  h += secOpen('What failed','Assumptions under stress') + noteListHTML(PACK.failed,'Assumption to challenge') + `</section>`;
+  h += secOpen('Capability contests','Capability · countermeasure · lifecycle') + contestsHTML() + `</section>`;
+  h += secOpen('Test next ICT','Immediate training actions') + noteListHTML(PACK.testICT,'Action for next cycle') + `</section>`;
+  h += secOpen('SOP assumptions to review','Challenge before the next cycle') + noteListHTML(PACK.sopReview,'SOP to review') + `</section>`;
+  h += `<div class="feedfoot"><p>This pack distils the <b>Conflict Studies &amp; Insights</b> weekly briefs into a formation-ready monthly learning pack. Open any <b>Source packet</b> for the full serial.</p><a href="${WEEKLY_URL}" target="_blank" rel="noopener">Read the weekly brief →</a></div>`;
   return h;
 }
 
@@ -1182,8 +1162,8 @@ function decisionCard(ech, c, cls){
 function detailHTML(s){
   const ech = (PKG[PKG_OF[s.id]]||{}).echelons || ["Division","Brigade"];
   const blocks = s.blocks.map(b=>`<div class="block"><div class="bl">${b.l}</div><p>${b.t}</p></div>`).join('');
-  const srcs = s.sources.length ? `<div class="srcs"><div class="sh">Sources · ${s.sources.length}</div>${
-      s.sources.map((x,i)=>`<a href="${x.u}" target="_blank" rel="noopener"><span>[${i+1}]</span> ${x.n}</a>`).join('')}</div>` : '';
+  const srcs = s.sources.length ? `<div class="srcs"><div class="sh">Learn more</div><div class="sh-sub">${s.sources.length} source${s.sources.length===1?'':'s'} — tap to read the original reporting ↗</div>${
+      s.sources.map((x,i)=>`<a href="${x.u}" target="_blank" rel="noopener"><span class="src-n">[${i+1}]</span><span class="src-name">${x.n}</span><span class="src-go">↗</span></a>`).join('')}</div>` : '';
   return `<div class="dpanel${s.image?'':' no-img'}">${imgTag(s)}${s.image?'':'<div class="pcode">'+tCode(s)+'</div>'}${creditTag(s)}</div>
     <div class="dwrap">
       <div class="dkicker"><span class="vdot ${s.verdict}"></span><span class="sid">SER ${s.id}</span><span>${KIND_LABEL[s.kind]}</span><span>·</span><span>${s.theatre}${s.multi?" · multi-theatre":""}</span></div>
