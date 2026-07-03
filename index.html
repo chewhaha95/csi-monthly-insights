@@ -347,6 +347,22 @@ a{color:inherit}
 .psec-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
 .psec-title{font-family:var(--disp);font-weight:700;font-size:21px;color:var(--text);letter-spacing:-.005em}
 .psec-right{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);text-align:right;flex:0 0 auto}
+/* three command sections (Opportunities / Vulnerabilities / Capability Development) */
+.psec.fs{background:none;border:none;padding:0;margin:24px 0 0}
+.psec.fs .psec-head{margin:0 16px 11px}
+.psec.fs .psec-title{display:flex;align-items:center;gap:9px}
+.psec.fs .psec-title::before{content:"";width:10px;height:10px;border-radius:50%;flex:0 0 auto;background:var(--line-2)}
+.fs-opp .psec-title::before{background:#3f7d54}
+.fs-vuln .psec-title::before{background:var(--red)}
+.fs-cap .psec-title::before{background:#3a6ea5}
+.fcard{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line-2);border-radius:12px;padding:13px 15px 12px;margin:0 16px 9px}
+.fs-opp .fcard{border-left-color:#3f7d54}
+.fs-vuln .fcard{border-left-color:var(--red)}
+.fs-cap .fcard{border-left-color:#3a6ea5}
+.fc-t{font-family:var(--disp);font-weight:700;font-size:16px;line-height:1.25;color:var(--text);margin-bottom:5px}
+.fc-d{font-family:var(--body);font-size:13.5px;line-height:1.55;color:var(--text-2);margin:0 0 9px}
+.fc-src{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;color:var(--text-3);background:none;border:none;padding:0;cursor:pointer;text-align:left;line-height:1.35}
+.fc-src:hover{color:var(--red)}
 .lens-card{font-size:14.5px;line-height:1.56;color:var(--text)}
 .wf-list{display:flex;flex-direction:column;gap:10px}
 .wf-item{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--raise)}
@@ -732,7 +748,7 @@ a{color:inherit}
 <script src="data.js"></script>
 <script>
 /* ===================== RENDER ===================== */
-let SERIALS, PACK, PLANNING, KEY_JUDGEMENTS, FORMATIONS, BLUF_TEXT, SUGGESTIONS, _FMK;
+let SERIALS, PACK, FRAME, PLANNING, KEY_JUDGEMENTS, FORMATIONS, BLUF_TEXT, SUGGESTIONS, _FMK;
 let SUMMARY={}, SIGNAL={}, APP={}, ICT={}, LEARN={}, FORMATIONS_ALL={}, ALL_SERIALS=[], PKG_OF={};
 function buildMerged(){
   SUMMARY={}; SIGNAL={}; APP={}; ICT={}; LEARN={}; FORMATIONS_ALL={}; ALL_SERIALS=[]; PKG_OF={};
@@ -758,7 +774,7 @@ function buildIndexAll(){
 function loadPackage(tab){
   const d = PKG[tab] || PKG.MANOEUVRE;
   SERIALS=d.SERIALS;
-  PACK=d.PACK; PLANNING=d.PLANNING; KEY_JUDGEMENTS=d.KEY_JUDGEMENTS; FORMATIONS=d.FORMATIONS;
+  PACK=d.PACK; FRAME=d.FRAME; PLANNING=d.PLANNING; KEY_JUDGEMENTS=d.KEY_JUDGEMENTS; FORMATIONS=d.FORMATIONS;
   BLUF_TEXT=d.BLUF; SUGGESTIONS=d.SUGGESTIONS; _FMK=d.FMK;
   buildIndex();
 }
@@ -1117,20 +1133,29 @@ function contestsHTML(){
   </div>`).join('');
 }
 function noteListHTML(items, note){ return `<div class="wf-list">${items.map(t=>`<div class="wf-item"><div class="wf-t">${t}</div><div class="wf-n">${note}</div></div>`).join('')}</div>`; }
+/* The three command sections. Each item links to its source serial, where the
+   full breakdown (decision cards, ICT, sources) lives — keeping the overview
+   scannable. */
+function frameCardHTML(item){
+  const s = ALL_SERIALS.find(x=>x.id===item.id);
+  const src = s ? `<button class="fc-src" data-id="${item.id}">${s.title} · SER ${item.id} →</button>` : '';
+  return `<div class="fcard"><div class="fc-t">${item.t}</div><p class="fc-d">${item.d}</p>${src}</div>`;
+}
+function frameSectionHTML(cls, title, sub, items){
+  if(!items || !items.length) return '';
+  return `<section class="psec fs fs-${cls}"><div class="psec-head"><h2 class="psec-title">${title}</h2><span class="psec-right">${sub}</span></div>${items.map(frameCardHTML).join('')}</section>`;
+}
 function packHTML(){
+  const F = FRAME || {};
   let h = `<div class="pack-head">
     <div class="pack-kicker">${PACK.kicker}</div>
     <h1 class="pack-title">What changed this month ${PACK.titleLine||'for the formation'}.</h1>
-    <p class="pack-lede">${PACK.changed}</p>
+    <p class="pack-lede">${PACK.commandLens}</p>
   </div>`;
-  h += secOpen('Formation priorities','Focus this month') + PACK.priorities.map(id=>learnCardHTML(id,true)).join('') + `</section>`;
-  h += secOpen('Brigade implications','Meaning by echelon') + `<div class="impl">${implMatrixHTML()}</div></section>`;
-  h += secOpen('What worked','Observed strengths') + noteListHTML(PACK.worked,'Observed value this month') + `</section>`;
-  h += secOpen('What failed','Assumptions under stress') + noteListHTML(PACK.failed,'Assumption to challenge') + `</section>`;
-  h += secOpen('Capability contests','Capability · countermeasure · lifecycle') + contestsHTML() + `</section>`;
-  h += secOpen('Test next ICT','Immediate training actions') + noteListHTML(PACK.testICT,'Action for next cycle') + `</section>`;
-  h += secOpen('SOP assumptions to review','Challenge before the next cycle') + noteListHTML(PACK.sopReview,'SOP to review') + `</section>`;
-  h += `<div class="feedfoot"><p>This pack distils the <b>Conflict Studies &amp; Insights</b> weekly briefs into a formation-ready monthly learning pack. Open any <b>Source packet</b> for the full serial.</p><a href="${WEEKLY_URL}" target="_blank" rel="noopener">Read the weekly brief →</a></div>`;
+  h += frameSectionHTML('opp','Opportunities','External enablers &amp; trends to leverage', F.opportunities);
+  h += frameSectionHTML('vuln','Vulnerabilities','Current risks &amp; gaps to close', F.vulnerabilities);
+  h += frameSectionHTML('cap','Capability Development','Deliberate actions — doctrine, training, procurement', F.capdev);
+  h += `<div class="feedfoot"><p>This pack distils the <b>Conflict Studies &amp; Insights</b> weekly briefs into a formation-ready monthly learning pack. Open any serial for its full breakdown, decision cards and ICT.</p><a href="${WEEKLY_URL}" target="_blank" rel="noopener">Read the weekly brief →</a></div>`;
   return h;
 }
 
