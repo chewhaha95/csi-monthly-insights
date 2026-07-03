@@ -104,6 +104,33 @@ a{color:inherit}
 .weekly .wk-src a{color:var(--text-3)}
 .weekly .wk-msg{padding:36px 8px;text-align:center}
 .weekly .wk-msg p{font-size:13.5px;color:var(--text-3)}
+/* preserved semantic structure from the source brief (mapped to app palette) */
+.weekly .sec-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:8px;vertical-align:1px}
+.weekly h2{display:flex;align-items:center}
+.weekly .wk-bluf{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--red);border-radius:10px;padding:14px 15px;margin:0 0 22px}
+.weekly .wk-bluf p{margin-bottom:9px;color:var(--text)}
+.weekly .wk-bluf p:last-child{margin-bottom:0}
+.weekly .wk-panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 15px 8px;margin:0 0 22px}
+.weekly .wk-panel ul,.weekly .wk-panel ol{margin:0;padding-left:2px;list-style:none}
+.weekly .wk-panel li{padding:11px 0;border-bottom:1px solid var(--line)}
+.weekly .wk-panel li:last-child{border-bottom:none}
+.weekly .theatre-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 15px 7px;margin:0 0 16px}
+.weekly .th-hdr{display:block;margin:0 0 13px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.weekly .th-badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--red);border:1px solid var(--line-2);border-radius:6px;padding:3px 8px;margin-bottom:9px}
+.weekly .th-name{font-family:var(--disp);font-weight:700;font-size:21px;line-height:1.14;color:var(--text);margin:0}
+.weekly .th-sub{font-family:var(--body);font-size:13px;color:var(--text-2);margin-top:4px;line-height:1.35}
+.weekly .wk-item{margin:0 0 20px}
+.weekly .wk-item:last-child{margin-bottom:10px}
+.weekly .pill{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-2);background:var(--surface-2);border:1px solid var(--line-2);border-radius:20px;padding:4px 10px;margin:0 6px 9px 0}
+.weekly .wk-strong{color:var(--text);font-weight:700}
+.weekly .theatre-card .wk-strong,.weekly .wk-panel .wk-strong{display:block;font-family:var(--disp);font-size:15.5px;line-height:1.28;margin:1px 0 7px}
+.weekly .src-group{display:block;margin-top:9px;line-height:2.2}
+.weekly .src-pill{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;letter-spacing:.02em;color:var(--text-3);background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:3px 9px;margin:0 6px 0 0;text-decoration:none}
+.weekly .src-pill:hover{color:var(--red);border-color:var(--red)}
+.weekly .src-pill svg{width:10px;height:10px;flex:0 0 auto}
+.weekly .ph{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.03em;text-transform:uppercase;border-radius:5px;padding:2px 6px;border:1px solid var(--line-2);color:var(--text-2);white-space:nowrap}
+.weekly .ph-active{color:#9a3412;border-color:#e6c39b;background:#faf1e6}
+.weekly .ph-cease{color:#3f6212;border-color:#cbdcac;background:#f3f7ea}
 
 /* search bar (toggled) */
 /* ===== ASK (grounded chat) ===== */
@@ -1278,9 +1305,14 @@ function weekHeadHTML(){
   return `<div class="wk-head"><div class="wk-title"><small>Weekly Brief</small>${state.weekLabel?esc(state.weekLabel):'Select a week'}</div><button class="wk-change" id="wkChange">Change week ▾</button></div>`;
 }
 function bindWeekHead(){ const b=$("#wkChange"); if(b) b.onclick=(e)=>{ e.stopPropagation(); toggleWeekPop(true); }; }
-/* Reflow the fetched brief into the app's own styling: keep the content
-   <section> blocks, strip class/style/id so app CSS governs, absolutize any
-   relative links, and open sources in a new tab. */
+/* Reflow the fetched brief into the app's own styling. The source carries a
+   clear semantic structure — theatre cards (.th-hdr/.th-badge/.th-name/.th-sub),
+   category tags (.pill), source chips (.src-pill), status chips (.ph*) and a BLUF
+   panel — that a blanket class-strip flattens into a run-on wall of text. So we
+   PRESERVE that whitelist of structural classes (re-styled in the app palette via
+   the .weekly rules), map bold headline utilities to .wk-strong, and strip only
+   the presentational noise (utility classes, inline dark-theme styles, ids). */
+const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong']);
 function reflowBrief(htmlString){
   const doc = new DOMParser().parseFromString(htmlString, "text/html");
   let sections = Array.from(doc.querySelectorAll('section'));
@@ -1288,8 +1320,23 @@ function reflowBrief(htmlString){
   if(!sections.length) return `<div class="wk-src">Source: <a href="${WEEKLY_BASE}${state.weekUrl==='/'?'/':state.weekUrl}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div><div class="wk-msg"><p>No readable content found.</p></div>`;
   const wrap = doc.createElement('div');
   sections.forEach(sec=>wrap.appendChild(sec.cloneNode(true)));
+  // structural tagging (needs original classes, so do it before the strip pass)
+  wrap.querySelectorAll('.theatre-card').forEach(card=>{
+    Array.from(card.children).forEach(ch=>{
+      if(ch.classList && ch.classList.contains('th-hdr')) return;
+      ch.classList.add('wk-body');
+      Array.from(ch.children).forEach(it=>it.classList && it.classList.add('wk-item'));
+    });
+  });
+  wrap.querySelectorAll('h2').forEach(h=>{ if(/BLUF/i.test(h.textContent||'')){ const d=h.nextElementSibling; if(d) d.classList.add('wk-bluf'); } });
+  wrap.querySelectorAll('[class*="bg-panel"]').forEach(d=>d.classList.add('wk-panel'));
+  // strip pass: keep only whitelisted structure, drop utilities/styles/ids
   wrap.querySelectorAll('*').forEach(el=>{
-    el.removeAttribute('class'); el.removeAttribute('style'); el.removeAttribute('id');
+    const orig = (el.getAttribute('class')||'').split(/\s+/).filter(Boolean);
+    const keep = orig.filter(c=>_WK_KEEP.has(c));
+    if(orig.includes('font-semibold')||orig.includes('font-bold')) keep.push('wk-strong');
+    el.removeAttribute('style'); el.removeAttribute('id');
+    if(keep.length) el.setAttribute('class', keep.join(' ')); else el.removeAttribute('class');
     if(el.tagName==='A'){
       const href = el.getAttribute('href');
       if(href && !/^https?:|^mailto:/i.test(href)) el.setAttribute('href', WEEKLY_BASE + (href.startsWith('/')?href:'/'+href));
