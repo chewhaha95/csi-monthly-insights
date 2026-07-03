@@ -362,6 +362,7 @@ a{color:inherit}
 .fc-t{font-family:var(--disp);font-weight:700;font-size:16px;line-height:1.25;color:var(--text);margin-bottom:5px}
 .fc-d{font-family:var(--body);font-size:13.5px;line-height:1.55;color:var(--text-2);margin:0 0 9px}
 .fc-src{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;color:var(--text-3);background:none;border:none;padding:0;cursor:pointer;text-align:left;line-height:1.35}
+.fc-src .fc-lm{color:var(--red);font-weight:700}
 .fc-src:hover{color:var(--red)}
 .lens-card{font-size:14.5px;line-height:1.56;color:var(--text)}
 .wf-list{display:flex;flex-direction:column;gap:10px}
@@ -1138,7 +1139,7 @@ function noteListHTML(items, note){ return `<div class="wf-list">${items.map(t=>
    scannable. */
 function frameCardHTML(item){
   const s = ALL_SERIALS.find(x=>x.id===item.id);
-  const src = s ? `<button class="fc-src" data-id="${item.id}">${s.title} · SER ${item.id} →</button>` : '';
+  const src = s ? `<button class="fc-src" data-id="${item.id}"><span class="fc-lm">Learn more:</span> ${s.title} →</button>` : '';
   return `<div class="fcard"><div class="fc-t">${item.t}</div><p class="fc-d">${item.d}</p>${src}</div>`;
 }
 function frameSectionHTML(cls, title, sub, items){
