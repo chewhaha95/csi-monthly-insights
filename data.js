@@ -803,9 +803,86 @@ const KEY_JUDGEMENTS_EXP = [
 ];
 const BLUF_EXP = "In June the expeditionary fight was <b>grey-zone and drone-saturated</b>. Thailand advanced a claim with three <b>simultaneous sub-threshold actions</b> that a sequential monitor would miss. The IDF moved a ceasefire line 10 km while ceasefires were announced — a <b>baseline you must instrument</b>. Hezbollah made every predictable approach a <b>drone ambush</b> cued by real-time ISR. And Sudan's El Obeid siege proved <b>protected status deters nothing</b>. Link the pattern, measure the gap, assume the approach is watched, and carry 72 hours of your own power.";
 const SUGGESTIONS_EXP = ["What changed for expeditionary this month?","How do we detect a sub-threshold advance?","How do we defeat a drone ambush on the approach?","What to rehearse in ICT","Lessons for Guards","Give me the bottom line"];
+/* ===================== FRAME — the three command sections =====================
+   Each package is reorganised into three analytical buckets:
+   · Opportunities  — EXTERNAL enablers/trends/adversary missteps to leverage
+                      (if we'd have to build/buy it ourselves it is Cap Dev, not this)
+   · Vulnerabilities — INTERNAL risks/gaps these conflicts expose (tactics,
+                      technical deficiencies, supply-chain or training gaps)
+   · Capability Development — INTERNAL deliberate actions to exploit an opportunity
+                      or fix a vulnerability (doctrine, training, procurement)
+   Each item: {t: headline, d: 1–2 line so-what, id: source serial}. */
+const FRAME_M = {
+  opportunities:[
+    {t:"Graduated, deniable advance", d:"The IDF moved a ceasefire line 10 km north by pegging each small step to an adversary provocation and holding it under negotiation — a repeatable sub-threshold way to take ground without a decisive engagement.", id:"M-01"},
+    {t:"Two-tier drone architecture that beats EW", d:"Ukraine paired an unjammable fibre-optic close layer (0–15 km) with an AI-autonomous deep layer (50–300 km) that no single EW solution defeats — a proven strike model for any drone-saturated approach.", id:"M-02"}
+  ],
+  vulnerabilities:[
+    {t:"RF jamming won't stop a fibre-optic FPV", d:"Armour that relies on electronic defeat is exposed to fibre-optic and optically-guided FPVs — there is no RF answer to the close layer.", id:"M-02"},
+    {t:"Co-located command, logistics and comms", d:"A TAA that clusters the three signatures is a single target for a no-signal AI deep strike; one strike removes two functions at once.", id:"M-02"},
+    {t:"Predictable CASEVAC invites the double-tap", d:"A telegraphed rescue and QRF response to a first strike is exactly what the follow-on missile is aimed at — current SOPs convert one strike into mass casualties.", id:"M-03"}
+  ],
+  capdev:[
+    {t:"Pre-authorise exploitation triggers", d:"Build an escalation-trigger matrix into the OPLAN so proportionate exploitation is a planned choice, and instrument our own limit-of-advance line against creep.", id:"M-01"},
+    {t:"Redesign the TAA and the last mile", d:"Rewrite TAA layout to separate command/logistics/comms, and adopt a manned-drop-off → UGV relay → UGV CASEVAC TTP for the 5–15 km approach zone.", id:"M-02"},
+    {t:"Codify follow-on-strike defeat", d:"Write a timed CASEVAC hold with UGV assessment and off-route QRF movement into force-protection SOPs, and add a physical/kinetic drone-defeat layer to mounted drills.", id:"M-03"}
+  ]
+};
+const FRAME_S = {
+  opportunities:[
+    {t:"Fire control as route denial", d:"Ukraine made five cities' logistics non-viable by denying routes rather than destroying them — cheaper and more durable — and kept nodes down by striking the repair effort, not just the span.", id:"S-01"},
+    {t:"Cheap AI interceptors win the cost-exchange", d:"A ~$3,500 autonomous interceptor killed $20–50k Shaheds at ~95% and was re-tuned against a faster variant by software in weeks — a proven low-cost layer for the mass-drone tier.", id:"S-02"},
+    {t:"The succession & finance window", d:"A decapitation only pays if the deputy layer and the money network are struck inside the 2–4 week window before a replacement embeds — an exploitable adversary vulnerability.", id:"S-03"}
+  ],
+  vulnerabilities:[
+    {t:"Reactive target-servicing", d:"Servicing targets as they appear, instead of ranking the transport network for route denial, spends fires on low-leverage nodes.", id:"S-01"},
+    {t:"Expensive interceptors on cheap drones", d:"Firing SAMs at mass drones is a losing cost-exchange that empties the magazine before the real threat arrives.", id:"S-02"},
+    {t:"Top-tier saturation gap", d:"Cheap layers can't cover ballistic and hypersonic threats; a decoy-led composite raid depletes the magazine and strikes exactly the tier left open.", id:"S-04"}
+  ],
+  capdev:[
+    {t:"Adopt fire control + a network priority list", d:"Add 'fire control over a route' to the objective set, build a Transport Network Disruption Priority List, and plan the Phase 2 strike on the repair effort into every interdiction serial.", id:"S-01"},
+    {t:"Field a low-cost intercept layer", d:"Assign a low-cost/AI interceptor to the mass-drone tier, reserve SAMs for the top tier, and stand up the software-retraining pipeline that keeps pace with new variants.", id:"S-02"},
+    {t:"Close the top tier, build a decoy-led package", d:"Stress-test GBAD against a composite raid to find where the magazine exhausts, prioritise closing that tier, and design a decoy-led offensive strike package of our own.", id:"S-04"},
+    {t:"Stand up succession & finance collection", d:"Hold a parallel financial-network map for every priority target and a 24-hour succession-window collection posture that activates on an HVI kill.", id:"S-03"}
+  ]
+};
+const FRAME_CSS = {
+  opportunities:[
+    {t:"Deny repair, don't re-strike", d:"Ukraine kept Crimea's arteries down by killing the repair effort — strike, confirm the repair order, then destroy the repair assets before they arrive — worth far more than repeatedly re-striking a span.", id:"CS-01"},
+    {t:"UGV logistics at scale", d:"Tens of thousands of UGV missions moved thousands of tonnes and evacuated 600+ wounded where manned vehicles could not go (90% of Pokrovsk resupply) — the emerging model for contested last-mile logistics.", id:"CS-02"}
+  ],
+  vulnerabilities:[
+    {t:"A detectable repair signature", d:"Our own persistent, predictable repair deployments at contested crossings are a targeting gift — the same interdiction method works against us.", id:"CS-01"},
+    {t:"Single-link UGV command", d:"A UGV fleet dependent on one Starlink link with no degraded mode, and no UGV-specific passability standard, are single points of failure.", id:"CS-02"},
+    {t:"Civilian-infrastructure dependence", d:"El Obeid showed a garrison can be collapsed through its power → water → comms chain without a ground assault; any position reliant on civilian infrastructure is exposed.", id:"CS-03"}
+  ],
+  capdev:[
+    {t:"Repair discipline + repair-node targeting", d:"Impose a 90-minute, decoyed, low-signature repair discipline, and build repair-node targeting into interdiction planning.", id:"CS-01"},
+    {t:"Degraded-mode UGV C2 + passability recce", d:"Produce a non-Starlink UGV command SOP that survives a link drop, and add UGV passability to route reconnaissance.", id:"CS-02"},
+    {t:"Infrastructure audit + 72-hour Signals power", d:"Make an infrastructure vulnerability audit and 72-hour standalone Signals power a pre-deployment standard against the El Obeid failure chain.", id:"CS-03"}
+  ]
+};
+const FRAME_EXP = {
+  opportunities:[
+    {t:"Coordinated sub-threshold advance", d:"Thailand added three facts on the ground in one day by keeping each action below the response threshold — a repeatable grey-zone method to advance a claim without triggering a response.", id:"EX-01"},
+    {t:"Baseline creep under active ceasefire", d:"The IDF moved a line 10 km in under two months while ceasefires were repeatedly announced — a proven way to gain ground under the cover of negotiation.", id:"EX-02"}
+  ],
+  vulnerabilities:[
+    {t:"Sequential monitoring misses the pattern", d:"Incident-by-incident observation cannot see a coordinated sub-threshold advance; only cumulative pattern assessment reveals it.", id:"EX-01"},
+    {t:"Trusting the press release over the ground", d:"Without a measured line-to-position gap, a moving ceasefire line is invisible — public statements lag the truth.", id:"EX-02"},
+    {t:"Predictable approaches are drone ambushes", d:"A telegraphed approach to high ground or a tunnel exit is now a pre-positioned drone ambush, cued by real-time ISR on our announced movements.", id:"EX-03"},
+    {t:"Infrastructure dependence & protected-status complacency", d:"A besieged position degraded through its infrastructure survives only on self-sufficiency; observer or protected status deters nothing.", id:"EX-04"}
+  ],
+  capdev:[
+    {t:"Simultaneous observation + pattern assessment", d:"Redesign observation to cover sub-threshold categories at once and make cumulative pattern assessment a mandatory reporting output.", id:"EX-01"},
+    {t:"Instrument the ceasefire line", d:"Track the line as a coordinate gap to the adversary's forward position, with a 2-hour escalation-trigger report against the ground truth.", id:"EX-02"},
+    {t:"Drone-corridor assessment + tunnel-exit overwatch", d:"Make a drone-threat-corridor assessment and tunnel-exit overwatch mandatory in assault SOPs, and suppress the last 500 m of the approach.", id:"EX-03"},
+    {t:"72-hour self-sufficiency standard", d:"Set 72-hour power-independent operations and air-threat force protection as the standard for Commandos and Guards.", id:"EX-04"}
+  ]
+};
 const PKG = {
-  MANOEUVRE: { SERIALS:SERIALS_M, SUMMARY:SUMMARY_M, SIGNAL:SIGNAL_M, APP:APP_M, ICT:ICT_M, LEARN:LEARN_M, PACK:PACK_M, PLANNING:PLANNING_M, KEY_JUDGEMENTS:KEY_JUDGEMENTS_M, FORMATIONS:FORMATIONS_M, BLUF:BLUF_TEXT_M, SUGGESTIONS:SUGGESTIONS_M, FMK:_FMK_M, echelons:["Division","Brigade"] },
-  SENSE:     { SERIALS:SERIALS_S, SUMMARY:SUMMARY_S, SIGNAL:SIGNAL_S, APP:APP_S, ICT:ICT_S, LEARN:LEARN_S, PACK:PACK_S, PLANNING:PLANNING_S, KEY_JUDGEMENTS:KEY_JUDGEMENTS_S, FORMATIONS:FORMATIONS_S, BLUF:BLUF_S, SUGGESTIONS:SUGGESTIONS_S, FMK:_FMK_S, echelons:["Division","Unit"] },
-  CSS:       { SERIALS:SERIALS_CSS, SUMMARY:SUMMARY_CSS, SIGNAL:SIGNAL_CSS, APP:APP_CSS, ICT:ICT_CSS, LEARN:LEARN_CSS, PACK:PACK_CSS, PLANNING:PLANNING_CSS, KEY_JUDGEMENTS:KEY_JUDGEMENTS_CSS, FORMATIONS:FORMATIONS_CSS, BLUF:BLUF_CSS, SUGGESTIONS:SUGGESTIONS_CSS, FMK:_FMK_CSS, echelons:["Division","Unit"] },
-  EXPED:     { SERIALS:SERIALS_EXP, SUMMARY:SUMMARY_EXP, SIGNAL:SIGNAL_EXP, APP:APP_EXP, ICT:ICT_EXP, LEARN:LEARN_EXP, PACK:PACK_EXP, PLANNING:PLANNING_EXP, KEY_JUDGEMENTS:KEY_JUDGEMENTS_EXP, FORMATIONS:FORMATIONS_EXP, BLUF:BLUF_EXP, SUGGESTIONS:SUGGESTIONS_EXP, FMK:_FMK_EXP, echelons:["Mission HQ","Section"] }
+  MANOEUVRE: { SERIALS:SERIALS_M, SUMMARY:SUMMARY_M, SIGNAL:SIGNAL_M, APP:APP_M, ICT:ICT_M, LEARN:LEARN_M, PACK:PACK_M, FRAME:FRAME_M, PLANNING:PLANNING_M, KEY_JUDGEMENTS:KEY_JUDGEMENTS_M, FORMATIONS:FORMATIONS_M, BLUF:BLUF_TEXT_M, SUGGESTIONS:SUGGESTIONS_M, FMK:_FMK_M, echelons:["Division","Brigade"] },
+  SENSE:     { SERIALS:SERIALS_S, SUMMARY:SUMMARY_S, SIGNAL:SIGNAL_S, APP:APP_S, ICT:ICT_S, LEARN:LEARN_S, PACK:PACK_S, FRAME:FRAME_S, PLANNING:PLANNING_S, KEY_JUDGEMENTS:KEY_JUDGEMENTS_S, FORMATIONS:FORMATIONS_S, BLUF:BLUF_S, SUGGESTIONS:SUGGESTIONS_S, FMK:_FMK_S, echelons:["Division","Unit"] },
+  CSS:       { SERIALS:SERIALS_CSS, SUMMARY:SUMMARY_CSS, SIGNAL:SIGNAL_CSS, APP:APP_CSS, ICT:ICT_CSS, LEARN:LEARN_CSS, PACK:PACK_CSS, FRAME:FRAME_CSS, PLANNING:PLANNING_CSS, KEY_JUDGEMENTS:KEY_JUDGEMENTS_CSS, FORMATIONS:FORMATIONS_CSS, BLUF:BLUF_CSS, SUGGESTIONS:SUGGESTIONS_CSS, FMK:_FMK_CSS, echelons:["Division","Unit"] },
+  EXPED:     { SERIALS:SERIALS_EXP, SUMMARY:SUMMARY_EXP, SIGNAL:SIGNAL_EXP, APP:APP_EXP, ICT:ICT_EXP, LEARN:LEARN_EXP, PACK:PACK_EXP, FRAME:FRAME_EXP, PLANNING:PLANNING_EXP, KEY_JUDGEMENTS:KEY_JUDGEMENTS_EXP, FORMATIONS:FORMATIONS_EXP, BLUF:BLUF_EXP, SUGGESTIONS:SUGGESTIONS_EXP, FMK:_FMK_EXP, echelons:["Mission HQ","Section"] }
 };
