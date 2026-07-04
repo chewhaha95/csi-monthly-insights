@@ -348,6 +348,20 @@ a{color:inherit}
 .ask-pane-thread .cite{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--red);white-space:nowrap;vertical-align:1px}
 .ask-pane-thread .ans-so{font-size:13px;line-height:1.5;color:var(--ink);border-left:2px solid var(--line-2);padding-left:11px;margin-top:10px}
 .ask-pane-thread .ans-so b{color:var(--text);font-weight:700}
+/* formation-tailored line + field/counter rows + rehearsal blocks + list groups */
+.ans-for{font-size:13px;line-height:1.5;color:var(--ink);border-left:2px solid var(--steel);padding-left:11px;margin-top:10px}
+.ans-for b{color:var(--text);font-weight:700}
+.ans-frow{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-top:8px;cursor:pointer}
+.ans-frow .af-t{font-family:var(--disp);font-weight:700;font-size:14.5px;line-height:1.25;color:var(--text);margin-bottom:4px}
+.ans-frow p{font-size:13px;line-height:1.5;color:var(--ink);margin:0}
+.ans-ict{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin-top:8px;cursor:pointer}
+.ans-ict .ai-t{font-family:var(--disp);font-weight:700;font-size:15px;line-height:1.25;color:var(--text)}
+.ans-ict .ai-fmt{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--gold);margin:5px 0 6px}
+.ans-ict .ai-set{font-size:13px;font-style:italic;color:var(--ink);line-height:1.5;margin:0 0 6px}
+.ans-ict ol{margin:0 0 8px 18px;font-size:13px;color:var(--ink);line-height:1.55}
+.ans-ict .ai-std{font-size:12.5px;color:var(--ink);line-height:1.45}
+.ans-ict .ai-std b{color:var(--text)}
+.ans-grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin:13px 0 2px}
 .facet-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 10px;align-items:center}
 .facet-row::-webkit-scrollbar{display:none}
 .facet-lbl{flex:0 0 auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin-right:2px}
@@ -938,12 +952,26 @@ function submitAsk(text){
 const _FMKALL = Object.assign({}, _FMK_M, _FMK_S, _FMK_CSS, _FMK_EXP);
 const _SYNIDX = (()=>{ const m={}; SYN.forEach(cl=>cl.forEach(w=>{ (m[w]=m[w]||new Set()); cl.forEach(x=>m[w].add(x)); })); return m; })();
 function _expand(toks){ const out=new Set(toks); toks.forEach(t=>{ const c=_SYNIDX[t]; if(c) c.forEach(x=>out.add(x)); }); return [...out]; }
+/* Field intents: questions about a specific decision-card field answer from
+   that field, not the summary. Counter questions answer from the serial's
+   Countermeasure narrative. "List/all" returns the complete match set. */
+const _FLD = {
+  owner:["who owns","who's responsible","who is responsible","responsible for","who leads","who runs","who authorises","who authorizes"],
+  trigger:["trigger","threshold","when do we","when should","what initiates","under what condition"],
+  measure:["measure of success","how do we know","success criteria","metric","how would we know","how to measure","measure it"],
+  tradeoff:["trade-off","tradeoff","downside","what does it cost","at what cost","risk of adopting","what do we give up"]
+};
+const _CTR = ["counter","defeat","how do we stop","how to stop","defend against","defence against","defense against","protect against","mitigate"];
+const _AGG = ["list ","show all","show every"," all the ","how many","every serial","all serials"];
 function _detectAll(qlc){
-  const f={outcome:null,theatre:null,formation:null,section:null};
+  const f={outcome:null,theatre:null,formation:null,section:null,field:null,counter:false,agg:false};
   for(const [k,a] of Object.entries(_SEC)) if(a.some(w=>qlc.includes(w))){f.section=k;break;}
   for(const [k,a] of Object.entries(_OUT)) if(a.some(w=>qlc.includes(w))){f.outcome=k;break;}
   for(const [k,a] of Object.entries(_THK)) if(a.some(w=>qlc.includes(w))){f.theatre=k;break;}
   for(const [k,a] of Object.entries(_FMKALL)) if(a.some(w=>qlc.includes(w))){f.formation=k;break;}
+  for(const [k,a] of Object.entries(_FLD)) if(a.some(w=>qlc.includes(w))){f.field=k;break;}
+  f.counter = _CTR.some(w=>qlc.includes(w));
+  f.agg = _AGG.some(w=>qlc.includes(w));
   return f;
 }
 /* Ranking. When the on-device embedding model is loaded, `sem` is a map of
@@ -982,8 +1010,21 @@ function answerForAll(q, sem){
     return {type:f.section, pkg, f, items:scored.slice(0,3).map(x=>x.s)};
   }
   if(!scored.length) return {type:'none', f};
-  return {type:'serials', f, mode: f.section==='ict'?'ict':'serials', items:scored.slice(0,5).map(x=>x.s)};
+  const mode = f.section==='ict' ? 'ict' : (f.field ? 'field' : (f.counter ? 'counter' : 'serials'));
+  const items = f.agg ? scored.map(x=>x.s) : scored.slice(0, mode==='ict'?2:5).map(x=>x.s);
+  return {type:'serials', f, mode, list:f.agg, items};
 }
+/* Pick the decision card matching the reader's formation: divisions get the
+   division card, units/brigades get the second-echelon card. */
+const _DIVS = new Set(["3DIV","9DIV","6DIV"]);
+function _echCard(id){
+  const a=APP[id]||{}, ech=(PKG[PKG_OF[id]]||{}).echelons||["Division","Brigade"];
+  const fm=state.fFormation;
+  if(fm!=='ALL' && !_DIVS.has(fm)) return {card:a.bde||{}, ech:ech[1]};
+  return {card:a.div||{}, ech:ech[0]};
+}
+const _firstSent = (t,n)=>{ const parts=String(t||'').split('. '); const out=parts.slice(0,n).join('. '); return out + (parts.length>n && !out.endsWith('.') ? '.' : ''); };
+const _counterText = s => { const b=(s.blocks||[]).find(x=>/counter/i.test(x.l)); return b ? _firstSent(b.t,2) : (SUMMARY[s.id]||''); };
 function _leadAll(f,mode,n){
   const fm = f.formation && (FORMATIONS_ALL[f.formation]||{}).n;
   if(mode==='ict') return `<b>What to rehearse</b>${fm?` for ${fm}`:''} — drawn from ${n} serial${n>1?'s':''}:`;
@@ -1012,15 +1053,46 @@ function synthAll(a){
       + a.items.map(s=>_ansCard(s,'serials')).join('');
   }
   const items=a.items, n=items.length;
-  const woven = items.slice(0,3).map(s=>{
-    const line = a.mode==='ict' ? (ICT[s.id]&&ICT[s.id].dec) : SUMMARY[s.id];
-    return `${line} <span class="cite">SER ${s.id}</span>`;
-  }).join(' ');
+  const fmName = state.fFormation!=='ALL' && (FORMATIONS_ALL[state.fFormation]||{}).n;
+  /* formation line: the top serial's decision, at the reader's echelon */
+  const forLine = ()=>{ if(!fmName || !items.length) return '';
+    const e=_echCard(items[0].id); if(!e.card.d) return '';
+    return `<div class="ans-for"><b>For ${fmName} (${e.ech.toLowerCase()}) —</b> ${e.card.d} <span class="cite">SER ${items[0].id}</span></div>`; };
+  /* field answers: owner / trigger / measure / trade-off from the decision cards */
+  if(a.mode==='field'){
+    const key={owner:'o',trigger:'t',measure:'m',tradeoff:'x'}[a.f.field];
+    const label={owner:'Ownership',trigger:'Triggers',measure:'Measures of success',tradeoff:'Trade-offs'}[a.f.field];
+    const rows=items.slice(0,3).map(s=>{ const e=_echCard(s.id); const v=e.card[key]; if(!v) return '';
+      return `<div class="ans-frow" data-open="${s.id}"><div class="af-t">${s.title}</div><p>${v} <span class="cite">SER ${s.id} · ${e.ech}</span></p></div>`; }).join('');
+    return `<div class="lead"><b>${label}</b> — from the decision cards${fmName?` at ${fmName}'s echelon`:''}:</div>${rows}`
+      + `<div class="closing">Tap a serial for the full decision card — owner, trigger, trade-off and measure together.</div>`;
+  }
+  /* counter answers: from the serial's Countermeasure narrative */
+  if(a.mode==='counter'){
+    const rows=items.slice(0,3).map(s=>`<div class="ans-frow" data-open="${s.id}"><div class="af-t">${s.title}</div><p>${_counterText(s)} <span class="cite">SER ${s.id}</span></p></div>`).join('');
+    return `<div class="lead"><b>Counters observed</b> this edition:</div>${rows}${forLine()}`
+      + `<div class="closing">Tap a serial for the full narrative and decision cards.</div>`;
+  }
+  /* rehearse answers: the full ICT serial, ready to lift into a training plan */
+  if(a.mode==='ict'){
+    const blocks=items.slice(0,2).map(s=>{ const t=ICT[s.id]; if(!t) return '';
+      return `<div class="ans-ict" data-open="${s.id}"><div class="ai-t">${s.title}</div><div class="ai-fmt">${t.fmt}</div><p class="ai-set">${t.set}</p><ol>${t.run.map(r=>`<li>${r}</li>`).join('')}</ol><div class="ai-std"><b>Standard —</b> ${t.std}</div></div>`; }).join('');
+    return `<div class="lead">${_leadAll(a.f,'ict',Math.min(n,2))}</div>${blocks}`
+      + `<div class="closing">Rehearsal serials are first-cut designs — calibrate to the formation before running them.</div>`;
+  }
+  /* list answers: the complete match set, grouped by package */
+  if(a.list){
+    let h=`<div class="lead"><b>${n}</b> serial${n===1?'':'s'} match${fmName?` for ${fmName}`:''}:</div>`;
+    PACKAGES.forEach(p=>{ const g=items.filter(s=>PKG_OF[s.id]===p.k); if(!g.length) return;
+      h+=`<div class="ans-grp">${p.label} · ${g.length}</div>`+g.map(s=>_ansCard(s,'serials')).join(''); });
+    return h + `<div class="closing">Tap any serial for the full breakdown.</div>`;
+  }
+  const woven = items.slice(0,3).map(s=>`${SUMMARY[s.id]} <span class="cite">SER ${s.id}</span>`).join(' ');
   const nx = LEARN[items[0].id] && LEARN[items[0].id].next;
   const soWhat = nx ? `<div class="ans-so"><b>So what —</b> ${nx}</div>` : '';
-  return `<div class="lead">${_leadAll(a.f,a.mode,n)}</div><div class="ans-prose">${woven}</div>${soWhat}`
+  return `<div class="lead">${_leadAll(a.f,a.mode,n)}</div><div class="ans-prose">${woven}</div>${soWhat}${forLine()}`
     + items.map(s=>_ansCard(s,a.mode)).join('')
-    + `<div class="closing">Tap any serial to open the full breakdown${a.mode==='ict'?' and its ICT serial':''}.</div>`;
+    + `<div class="closing">Tap any serial to open the full breakdown.</div>`;
 }
 
 /* ===================== ON-DEVICE SEMANTIC RETRIEVAL =====================
@@ -1075,7 +1147,7 @@ function _updateAskStatus(){
 }
 
 /* ----- Ask pane thread ----- */
-const ASK_EXAMPLES = ["What worked with drones?","Show Sudan threats","What should engineers rehearse?","Bottom line this month"];
+const ASK_EXAMPLES = ["How do we counter fibre-optic drones?","Who owns the casualty-evacuation change?","What should engineers rehearse?","List all threats this month"];
 const ASKP = { thread: [], seeded:false };
 function _renderPaneThread(){ const t=$("#askPaneThread"); if(!t) return; t.innerHTML = ASKP.thread.map(m=> m.role==='user'?`<div class="msg user">${esc(m.text)}</div>`:`<div class="msg bot">${m.html}</div>`).join(''); }
 function renderAskPane(){
@@ -1578,9 +1650,16 @@ function _vvUpd(){ const vv=window.visualViewport; if(!vv) return;
   if(document.querySelector('.app').classList.contains('kbd')) _scrollAskPane(); }
 /* Reset the app's scroll containers (the document itself never scrolls). */
 function scrollHome(){ const m=$("#scroll"); if(m) m.scrollTop=0; const d=$("#detail"); if(d) d.scrollTop=0; }
+/* "my formation": set once (either filter), remembered on-device, and used to
+   scope Serials, Ask answers and the tailored decision line. */
+function setMyFormation(v){
+  state.fFormation=v; state.serialFormation=v;
+  try{ localStorage.setItem('csi-formation', v); }catch(e){}
+}
 function init(){
   buildMerged();
   loadPackage(state.tab);
+  try{ const mf=localStorage.getItem('csi-formation'); if(mf && (mf==='ALL' || FORMATIONS_ALL[mf])){ state.fFormation=mf; state.serialFormation=mf; } }catch(e){}
   buildTabs(); renderFeed(); renderSerials();
   if(window.visualViewport){ visualViewport.addEventListener('resize', _vvUpd); visualViewport.addEventListener('scroll', _vvUpd); _vvUpd(); }
   window.addEventListener('resize', _vvUpd);
@@ -1618,7 +1697,7 @@ function init(){
     if(ex){ if(_si){ _si.value=''; _si.blur(); } askAll(ex.dataset.ask); return; }
     const chip=e.target.closest('[data-facet]');
     if(chip){ const fc=chip.dataset.facet;
-      if(fc==='theatre') state.fTheatre=chip.dataset.val; else if(fc==='formation') state.fFormation=chip.dataset.val; else state.fVerdict=chip.dataset.val;
+      if(fc==='theatre') state.fTheatre=chip.dataset.val; else if(fc==='formation') setMyFormation(chip.dataset.val); else state.fVerdict=chip.dataset.val;
       $("#searchFacets").innerHTML=searchFacetsHTML(); _reanswer(); return; }
     const op=e.target.closest('[data-open]');
     if(op){ openDetail(op.dataset.open); return; }
@@ -1629,7 +1708,7 @@ function init(){
     const fl = e.target.closest('[data-filter]');
     if(fl && !fl.disabled){ state.serialFilter = fl.dataset.filter; renderSerials(); scrollHome(); return; }
     const fm = e.target.closest('[data-fform]');
-    if(fm){ state.serialFormation = fm.dataset.fform; renderSerials(); scrollHome(); return; }
+    if(fm){ setMyFormation(fm.dataset.fform); renderSerials(); scrollHome(); return; }
     const bm = e.target.closest('[data-bm]');
     if(bm){ e.stopPropagation(); toggleSave(bm.dataset.bm); flashSaved(bm); return; }
     const card = e.target.closest('[data-id]');
