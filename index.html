@@ -44,11 +44,9 @@
   --body:'IBM Plex Sans',system-ui,sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,monospace;
   --topH:108px;
-  /* measured bar heights (JS refines); CSS defaults already include the
-     safe-area inset so the Ask pane never sits under the nav even if the
-     first measurement runs before iOS reports the inset */
-  --barH:56px;
-  --navH:calc(58px + env(safe-area-inset-bottom,0px));
+  /* gap between the bottom of the visual viewport and the layout viewport —
+     i.e. the on-screen keyboard height. Updated live from VisualViewport. */
+  --vvb:0px;
 }
 :root[data-theme="dark"]{
   --bg:#16150F; --surface:#211F17; --surface-2:#1B1A13; --raise:#272419;
@@ -71,13 +69,19 @@
 :root[data-theme="dark"] .ph-cease{color:#9FCA6A;border-color:#3F4A2A;background:#1C2415}
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.45;font-size:15px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-.app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;background:var(--bg)}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.45;font-size:15px;-webkit-font-smoothing:antialiased}
+/* App shell: a fixed column (header / content / nav) bound to the visual
+   viewport. The document itself never scrolls — content scrolls inside
+   main.scroll — so iOS can't shove the page around, the header can't slide
+   under the status bar, and the nav can't fall off the bottom. --vvb keeps the
+   shell above the on-screen keyboard. */
+.app{position:fixed;top:0;left:0;right:0;bottom:var(--vvb,0px);max-width:480px;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;min-height:0}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 a{color:inherit}
 
 /* ============ TOP BAR ============ */
-.topbar{position:sticky;top:0;z-index:60;background:var(--bg);border-bottom:1px solid var(--line)}
+.topbar{position:relative;flex:0 0 auto;padding-top:env(safe-area-inset-top,0px);z-index:60;background:var(--bg);border-bottom:1px solid var(--line)}
 .tb-main{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 16px 10px;gap:8px}
 .tb-left{display:flex;align-items:center;gap:14px}
 .tb-right{display:flex;align-items:center;gap:16px;justify-self:end}
@@ -211,7 +215,7 @@ a{color:inherit}
 .pop p b{color:var(--text)}
 
 /* ============ SCROLL AREA ============ */
-.scroll{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+.scroll{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;position:relative;padding-bottom:24px}
 .edition-banner{display:flex;align-items:center;gap:13px;margin:16px 16px 6px;padding:14px 17px;background:#1C1B17;border-radius:13px}
 .edition-banner .eb-ic{width:26px;height:26px;color:var(--gold);flex:0 0 auto}
 .edition-banner .eb-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -313,13 +317,11 @@ a{color:inherit}
 .ask-status.ready::before{content:"● ";color:var(--green)}
 .ask-examples{display:flex;flex-wrap:wrap;gap:8px;padding:2px 16px 12px}
 .serchip.ex{white-space:normal;font-family:var(--body);font-size:12.5px;letter-spacing:0}
-/* Ask pane as a fixed chat container: it fills the space from below the top
-   bar to above the nav, the message thread scrolls INSIDE it, and the input is
-   pinned at its bottom — so the page itself never scrolls and the on-screen
-   keyboard can't shove it up. --barH/--navH are measured heights; --kb is the
-   keyboard height (VisualViewport). */
-#pane-search.on{display:flex;flex-direction:column;position:fixed;top:var(--barH);left:0;right:0;bottom:var(--navH);max-width:480px;margin:0 auto;background:var(--bg);z-index:40;overflow:hidden}
-.app.kbd #pane-search.on{bottom:var(--kb,0px)}
+/* Ask pane as a chat container: it fills the shell's content area (between the
+   header and the nav), the message thread scrolls INSIDE it, and the input is
+   pinned at its bottom. The app shell tracks the visual viewport (--vvb), so
+   when the keyboard opens the whole shell — input included — rises above it. */
+#pane-search.on{display:flex;flex-direction:column;position:absolute;inset:0;background:var(--bg);z-index:40;overflow:hidden}
 #pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>#askStatus,#pane-search>#askExamples,#pane-search>#searchFacets{flex:0 0 auto}
 #pane-search>.theatre-sub{padding-left:18px;padding-right:18px}
 .ask-pane-thread{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:16px;padding:10px 16px 12px}
@@ -456,10 +458,10 @@ a{color:inherit}
 
 /* ============ DETAIL VIEW ============ */
 .detail{display:none}
-.detail.on{display:block;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+.detail.on{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px}
 .app.detail-open .topbar,.app.detail-open .scroll{display:none}
 .app.ask-open .topbar,.app.ask-open .scroll,.app.ask-open .bottomnav{display:none}
-.dt-bar{position:sticky;top:0;z-index:55;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:12px 14px;gap:12px}
+.dt-bar{position:sticky;top:0;z-index:55;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px;gap:12px}
 .dt-bar .back{display:flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:700;font-size:15px}
 .dt-bar .back svg{width:20px;height:20px}
 .dt-bar .dt-actions{margin-left:auto;display:flex;gap:16px}
@@ -626,7 +628,7 @@ a{color:inherit}
 .src-feed a small{display:block;color:var(--text-3);font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;margin-top:3px}
 
 /* ============ BOTTOM NAV ============ */
-.bottomnav{position:fixed;bottom:0;left:0;right:0;z-index:60;background:rgba(251,250,245,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;padding:8px 4px calc(8px + env(safe-area-inset-bottom));max-width:480px;margin:0 auto}
+.bottomnav{flex:0 0 auto;z-index:60;background:rgba(251,250,245,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;padding:8px 4px calc(8px + env(safe-area-inset-bottom,0px))}
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;color:var(--text-3)}
 .nav-item svg{width:23px;height:23px}
 .nav-item span{font-family:var(--disp);font-weight:600;font-size:10.5px;letter-spacing:.01em}
@@ -1129,7 +1131,7 @@ function buildTabs(){
         $("#tabs").querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b===btn?'true':'false'));
         if(state.section!=="feed") showSection('feed');
         renderFeed();
-        $("#scroll").scrollIntoView({block:'start'}); window.scrollTo(0,0);
+        scrollHome();
         toggleWeekPop(true);
       };
       return;
@@ -1142,7 +1144,7 @@ function buildTabs(){
       try{ ASK.thread=[]; }catch(e){}
       $("#tabs").querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b===btn?'true':'false'));
       renderFeed(); renderSerials();
-      $("#scroll").scrollIntoView({block:'start'}); window.scrollTo(0,0);
+      scrollHome();
     };
   });
 }
@@ -1345,7 +1347,7 @@ function openDetail(id){
   $("#footBack").textContent = state.fromAsk ? "↑ Back to assistant" : (state.section==='serials'?"↑ Back to serials":"↑ Back to feed");
   updateBookmarkIcon();
   closePop();
-  window.scrollTo(0,0);
+  $("#detail").scrollTop = 0;
   $("#footBack").onclick = closeDetail;
 }
 function closeDetail(){
@@ -1354,7 +1356,6 @@ function closeDetail(){
   document.querySelector('.app').classList.remove('detail-open');
   if(state.fromAsk){ state.fromAsk=false; openAsk(); return; }
   $("#askDock") && $("#askDock").classList.toggle('on', state.section==='search');
-  window.scrollTo(0,0);
 }
 
 /* ===================== BOOKMARKS ===================== */
@@ -1389,9 +1390,8 @@ function showSection(sec){
   document.querySelectorAll('.nav-item').forEach(n=>n.setAttribute('aria-current', n.dataset.sec===sec?'true':'false'));
   $("#tabsWrap").style.display = sec==="feed"? "block":"none";
   $("#askDock") && $("#askDock").classList.toggle('on', sec==='search');
-  _setBarH();
   if(sec!=="feed"){ state.savedOnly=false; updateSavedIcon(); }
-  window.scrollTo(0,0);
+  scrollHome();
 }
 
 /* ===================== POP ===================== */
@@ -1456,7 +1456,7 @@ async function selectWeek(w){
   state.weekUrl = w.url; state.weekLabel = w.label;
   const c = $("#feedContent");
   c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Loading brief…</p></div></div>`;
-  window.scrollTo(0,0);
+  scrollHome();
   try{
     const res = await fetchTimeout(WEEKLY_BASE + w.url, 9000);
     if(!res.ok) throw new Error("HTTP "+res.status);
@@ -1466,7 +1466,7 @@ async function selectWeek(w){
     c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Couldn't load this brief. <a href="${full}" target="_blank" rel="noopener">Open on the web ↗</a></p></div></div>`;
   }
   bindWeekHead();
-  window.scrollTo(0,0);
+  scrollHome();
 }
 function weekHeadHTML(){
   return `<div class="wk-head"><div class="wk-title"><small>Weekly Brief</small>${state.weekLabel?esc(state.weekLabel):'Select a week'}</div><button class="wk-change" id="wkChange">Change week ▾</button></div>`;
@@ -1541,27 +1541,20 @@ function buildChecklist(){
 }
 
 /* ===================== WIRING ===================== */
-/* Keep --barH/--navH in sync with the real bar heights. Guards skip zero
-   (a hidden nav must not collapse the Ask pane), and a ResizeObserver catches
-   late growth — fonts swapping in, and iOS reporting the safe-area inset only
-   after first paint, which otherwise leaves the input under the nav. */
-function _setNavH(){ const n=$(".bottomnav"); if(n && n.offsetHeight>0) document.documentElement.style.setProperty('--navH', n.offsetHeight+'px'); }
-function _setBarH(){ const b=$(".topbar"); if(b && b.offsetHeight>0) document.documentElement.style.setProperty('--barH', b.offsetHeight+'px'); }
-function _setBars(){ _setNavH(); _setBarH(); }
+/* Keep the app shell bound to the visual viewport: --vvb is the gap between
+   the layout viewport bottom and the visual viewport bottom — i.e. the
+   on-screen keyboard height (0 when closed). The shell's bottom tracks it, so
+   the whole UI (input included) rises above the keyboard. */
+function _vvUpd(){ const vv=window.visualViewport; if(!vv) return;
+  const gap=Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  document.documentElement.style.setProperty('--vvb', gap+'px'); }
+/* Reset the app's scroll containers (the document itself never scrolls). */
+function scrollHome(){ const m=$("#scroll"); if(m) m.scrollTop=0; const d=$("#detail"); if(d) d.scrollTop=0; }
 function init(){
   buildMerged();
   loadPackage(state.tab);
   buildTabs(); renderFeed(); renderSerials();
-  _setBars();
-  window.addEventListener('resize', _setBars);
-  window.addEventListener('load', _setBars);
-  window.addEventListener('orientationchange', ()=>setTimeout(_setBars,200));
-  if(window.ResizeObserver){ const ro=new ResizeObserver(_setBars);
-    [$(".bottomnav"), $(".topbar")].forEach(el=>{ if(!el) return;
-      // border-box: the safe-area inset arrives as PADDING, which never changes
-      // the content box — observing that would miss it entirely
-      try{ ro.observe(el, {box:'border-box'}); }catch(e){ ro.observe(el); } }); }
-  [300,1000,3000].forEach(ms=>setTimeout(_setBars, ms)); // catch iOS reporting the inset late
+  if(window.visualViewport){ visualViewport.addEventListener('resize', _vvUpd); visualViewport.addEventListener('scroll', _vvUpd); _vvUpd(); }
   { const th = new Set(ALL_SERIALS.map(s=>s.theatre)).size;
     $("#popCount").textContent = ALL_SERIALS.length + " serials";
     $("#popScope").textContent = `across all four packages — Manoeuvre, Sense & Strike, Combat Support & Expeditionary — spanning ${th} reporting theatre${th===1?'':'s'}.`; }
@@ -1580,17 +1573,12 @@ function init(){
   document.querySelectorAll('.nav-item').forEach(n=> n.onclick=()=>{ state.savedOnly=false; updateSavedIcon(); showSection(n.dataset.sec); if(n.dataset.sec==='feed') renderFeed(); if(n.dataset.sec==='serials') renderSerials(); if(n.dataset.sec==='search') initAsk(); });
   const _si=$("#searchInput"); const _askForm=$("#askDock");
   if(_askForm) _askForm.addEventListener('submit', e=>{ e.preventDefault(); const v=_si.value; _si.value=''; _si.blur(); askAll(v); });
-  if(_si){ const _app=document.querySelector('.app'), _root=document.documentElement, vv=window.visualViewport;
-    // Pin the dock to the top of the on-screen keyboard. iOS shrinks only the
-    // visual viewport (not window.innerHeight), so the gap below it is the
-    // keyboard height; keep the dock there via a --kb variable.
-    const _kb=()=>{ if(!vv||!_app.classList.contains('kbd')) return; const h=Math.max(0, window.innerHeight - vv.height - vv.offsetTop); _root.style.setProperty('--kb', h+'px'); };
-    _si.addEventListener('focus', ()=>{ _app.classList.add('kbd'); _kb();
-      // iOS auto-scrolls the document to "reveal" the focused field even though
-      // nothing needs to move — undo it so the fixed pane stays put.
+  if(_si){ const _app=document.querySelector('.app');
+    // The shell tracks the keyboard via --vvb; here we just hide the nav while
+    // typing and undo iOS's needless focus auto-scroll of the (unscrollable) page.
+    _si.addEventListener('focus', ()=>{ _app.classList.add('kbd'); _vvUpd();
       setTimeout(()=>window.scrollTo(0,0), 60); setTimeout(()=>window.scrollTo(0,0), 260); });
-    _si.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _root.style.setProperty('--kb','0px'); _setBars(); });
-    if(vv){ vv.addEventListener('resize', _kb); vv.addEventListener('scroll', _kb); }
+    _si.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _vvUpd(); });
   }
   $("#pane-search").addEventListener('click', e=>{
     const ex=e.target.closest('[data-ask]');
@@ -1604,7 +1592,7 @@ function init(){
   // serials taps (delegation) — same behaviour as the pack
   $("#serialsContent").addEventListener('click', e=>{
     const fl = e.target.closest('[data-filter]');
-    if(fl && !fl.disabled){ state.serialFilter = fl.dataset.filter; renderSerials(); window.scrollTo(0,0); return; }
+    if(fl && !fl.disabled){ state.serialFilter = fl.dataset.filter; renderSerials(); scrollHome(); return; }
     const bm = e.target.closest('[data-bm]');
     if(bm){ e.stopPropagation(); toggleSave(bm.dataset.bm); flashSaved(bm); return; }
     const card = e.target.closest('[data-id]');
@@ -1614,7 +1602,7 @@ function init(){
   // top bar
   $("#btnBell").onclick = (e)=>{ e.stopPropagation(); togglePop(); };
   $("#btnTheme").onclick = toggleTheme; updateThemeIcon();
-  $("#btnSaved").onclick = ()=>{ if(state.section!=="serials") showSection("serials"); state.savedOnly=!state.savedOnly; updateSavedIcon(); renderSerials(); window.scrollTo(0,0); };
+  $("#btnSaved").onclick = ()=>{ if(state.section!=="serials") showSection("serials"); state.savedOnly=!state.savedOnly; updateSavedIcon(); renderSerials(); scrollHome(); };
   $("#logoHome").onclick = ()=>{ state.savedOnly=false; updateSavedIcon(); showSection('feed'); renderFeed(); };
   $("#logoHome").onkeydown = (e)=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); $("#logoHome").click();} };
   $("#scrim").onclick = closePop;
