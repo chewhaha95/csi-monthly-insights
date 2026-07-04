@@ -1354,7 +1354,7 @@ function _reanswer(){ if(!state.lastAsk) return;
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastSem:null, lastTopic:null, enhanced:false };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastSem:null, lastTopic:null, enhanced:true };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -1894,7 +1894,8 @@ function init(){
     const text='Ask assistant — unanswered questions (June 2026 edition)\n'+arr.map(x=>`${x.t} — ${x.q}`).join('\n');
     if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>{ _mc.textContent='Copied ✓'; setTimeout(()=>{ _mc.textContent='Copy list'; },1400); }).catch(()=>{}); } };
   const _mk=$("#missClear"); if(_mk) _mk.onclick=()=>{ try{ localStorage.removeItem('csi-misses'); }catch(e){} renderMisses(); };
-  try{ state.enhanced = localStorage.getItem('csi-enhanced')==='1'; }catch(e){}
+  /* Enhanced answers default ON; only an explicit opt-out ('0') turns it off. */
+  try{ state.enhanced = localStorage.getItem('csi-enhanced')!=='0'; }catch(e){}
   const _et=$("#enhToggle"); if(_et){ _et.checked=state.enhanced;
     _et.addEventListener('change', ()=>{ state.enhanced=_et.checked; try{ localStorage.setItem('csi-enhanced', _et.checked?'1':'0'); }catch(e){} _updateAskStatus(); }); }
   $("#btnSaved").onclick = ()=>{ if(state.section!=="serials") showSection("serials"); state.savedOnly=!state.savedOnly; updateSavedIcon(); renderSerials(); scrollHome(); };
