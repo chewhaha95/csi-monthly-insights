@@ -329,7 +329,10 @@ a{color:inherit}
 /* input row, in-flow at the bottom of the chat container */
 .ask-dock{flex:0 0 auto;display:none;gap:8px;padding:9px 12px;background:var(--bg);border-top:1px solid var(--line)}
 .ask-dock.on{display:flex;align-items:center}
-.ask-dock input{flex:1 1 auto;min-width:0;font-family:var(--body);font-size:15px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:22px;padding:11px 16px;outline:none;-webkit-appearance:none}
+/* 16px minimum: iOS zooms the whole page when focusing an input with a font
+   smaller than 16px, and the zoom lingers after the keyboard closes — the
+   pane then pans/wobbles in every direction. */
+.ask-dock input{flex:1 1 auto;min-width:0;font-family:var(--body);font-size:16px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:22px;padding:10px 16px;outline:none;-webkit-appearance:none}
 .ask-dock input::placeholder{color:var(--text-3)}
 .ask-dock input:focus{border-color:var(--red)}
 .ask-send{flex:0 0 auto;width:40px;height:40px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center}
@@ -1578,7 +1581,7 @@ function init(){
     // typing and undo iOS's needless focus auto-scroll of the (unscrollable) page.
     _si.addEventListener('focus', ()=>{ _app.classList.add('kbd'); _vvUpd();
       setTimeout(()=>window.scrollTo(0,0), 60); setTimeout(()=>window.scrollTo(0,0), 260); });
-    _si.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _vvUpd(); });
+    _si.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _vvUpd(); setTimeout(()=>window.scrollTo(0,0), 60); });
   }
   $("#pane-search").addEventListener('click', e=>{
     const ex=e.target.closest('[data-ask]');
