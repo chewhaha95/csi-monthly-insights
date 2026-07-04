@@ -317,6 +317,12 @@ a{color:inherit}
 .ask-status.loading{color:var(--steel)}
 .ask-status.loading::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px;animation:bl 1s infinite}
 .ask-status.ready::before{content:"● ";color:var(--green)}
+.ask-status.enh{color:var(--steel)}
+.ask-status.enh::before{content:"● "}
+.ask-enh{padding:0 16px 10px}
+.ask-enh label{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);cursor:pointer}
+.ask-enh input{accent-color:var(--red);width:14px;height:14px;margin:0;flex:0 0 auto}
+.curs{display:inline-block;width:7px;height:12px;background:var(--red);margin-left:2px;vertical-align:-1px;animation:bl 1s infinite}
 .ask-examples{display:flex;flex-wrap:wrap;gap:8px;padding:2px 16px 12px}
 .serchip.ex{white-space:normal;font-family:var(--body);font-size:12.5px;letter-spacing:0}
 /* Ask pane as a chat container: it fills the shell's content area (between the
@@ -324,7 +330,7 @@ a{color:inherit}
    pinned at its bottom. The app shell tracks the visual viewport (--vvb), so
    when the keyboard opens the whole shell — input included — rises above it. */
 #pane-search.on{display:flex;flex-direction:column;position:absolute;inset:0;background:var(--bg);z-index:40;overflow:hidden}
-#pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>#askStatus,#pane-search>#askExamples,#pane-search>#searchFacets{flex:0 0 auto}
+#pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>#askStatus,#pane-search>.ask-enh,#pane-search>#askExamples,#pane-search>#searchFacets{flex:0 0 auto}
 #pane-search>.theatre-sub{padding-left:18px;padding-right:18px}
 .ask-pane-thread{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:16px;padding:10px 16px 12px}
 .ask-pane-thread>*:first-child{margin-top:auto}
@@ -342,7 +348,7 @@ a{color:inherit}
 .app.kbd .bottomnav{display:none}
 /* while typing the pane is only as tall as the space above the keyboard —
    collapse the header rows so the conversation and the input keep it all */
-.app.kbd #pane-search>.section-title,.app.kbd #pane-search>.theatre-sub,.app.kbd #pane-search>#askStatus,.app.kbd #pane-search>#askExamples,.app.kbd #pane-search>#searchFacets{display:none}
+.app.kbd #pane-search>.section-title,.app.kbd #pane-search>.theatre-sub,.app.kbd #pane-search>#askStatus,.app.kbd #pane-search>.ask-enh,.app.kbd #pane-search>#askExamples,.app.kbd #pane-search>#searchFacets{display:none}
 .ask-pane-thread .msg.user{align-self:flex-end;max-width:85%;background:var(--red);color:#fff;font-size:14px;line-height:1.4;padding:9px 13px;border-radius:14px 14px 4px 14px}
 .ask-pane-thread .ans-prose{font-size:14px;line-height:1.6;color:var(--ink);margin:8px 0 2px}
 .ask-pane-thread .cite{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--red);white-space:nowrap;vertical-align:1px}
@@ -743,8 +749,9 @@ a{color:inherit}
     <!-- ASK — on-device assistant -->
     <div class="pane" id="pane-search" style="padding:0">
       <h1 class="section-title" style="font-size:28px;padding:18px 16px 2px">Ask the digest</h1>
-      <div class="theatre-sub" style="padding-bottom:10px">Ask in plain English — I answer from June's 14 serials and cite each one. Nothing leaves your device.</div>
+      <div class="theatre-sub" style="padding-bottom:10px">Ask in plain English — I answer from June's 14 serials and cite each one.</div>
       <div id="askStatus" class="ask-status"></div>
+      <div class="ask-enh"><label><input type="checkbox" id="enhToggle"><span>Enhanced answers · online model — questions leave this device</span></label></div>
       <div id="askExamples" class="ask-examples"></div>
       <div id="searchFacets"></div>
       <div id="askPaneThread" class="ask-pane-thread"></div>
@@ -1169,9 +1176,10 @@ async function _semScores(q){
 }
 function _updateAskStatus(){
   const el=$("#askStatus"); if(!el) return;
-  if(_embState==='loading'){ el.className='ask-status loading'; el.textContent='Loading on-device semantic model…'; }
+  if(state.enhanced){ el.className='ask-status enh'; el.textContent='Enhanced answers on · online model — questions leave this device'; }
+  else if(_embState==='loading'){ el.className='ask-status loading'; el.textContent='Loading on-device semantic model…'; }
   else if(_embState==='ready'){ el.className='ask-status ready'; el.textContent='On-device semantic search · nothing leaves your device'; }
-  else { el.className='ask-status'; el.textContent=''; }
+  else { el.className='ask-status'; el.textContent='On-device answers · nothing leaves your device'; }
 }
 
 /* ----- Ask pane thread ----- */
@@ -1257,6 +1265,59 @@ function initAsk(){
 /* The thread scrolls inside the fixed chat container — just keep it pinned to
    the newest message at the bottom. */
 function _scrollAskPane(){ const t=$("#askPaneThread"); if(t) requestAnimationFrame(()=>{ t.scrollTop=t.scrollHeight; }); }
+/* ===================== ENHANCED ANSWERS (opt-in, Workers AI) =====================
+   Retrieval stays on-device; when the toggle is on and the device is online,
+   the matching serials are sent as context to /api/ask (a Cloudflare Pages
+   Function on this same deployment) and a language model writes the answer,
+   streamed into the thread. ANY failure — offline, 503 (binding not set up),
+   timeout, empty stream — falls back to the deterministic on-device answer. */
+function _ctxSerials(items){
+  return items.slice(0,4).map(s=>{ const a=APP[s.id]||{}, t=ICT[s.id]||{};
+    return { id:s.id, title:s.title, dates:s.dates||'', theatre:s.theatre, verdict:s.verdictLabel||s.verdict,
+      summary:SUMMARY[s.id]||'', blocks:(s.blocks||[]).map(b=>b.l+': '+b.t),
+      div:a.div?{d:a.div.d,o:a.div.o,t:a.div.t,m:a.div.m}:null,
+      bde:a.bde?{d:a.bde.d,o:a.bde.o,t:a.bde.t,m:a.bde.m}:null,
+      ict:{dec:t.dec||'',std:t.std||''} }; });
+}
+const _linkifySer = t => esc(t).replace(/\(?\bSER\s+([A-Z]{1,3}-\d{2})\)?/g,'<span class="cite" data-open="$1">SER $1</span>');
+async function _askEnhanced(effQ, rawQ, sem){
+  const a = answerForAll(effQ, sem);
+  if(!a.items || !a.items.length) return false;
+  const history = ASKP.thread.filter(m=>!m.temp && (m.role==='user' || m.ans)).slice(-5,-1)
+    .map(m=>({role:m.role==='user'?'user':'assistant', text: m.role==='user'? m.text : strip(m.html).slice(0,500)}));
+  const fmName = state.fFormation!=='ALL' ? (FORMATIONS_ALL[state.fFormation]||{}).n : '';
+  const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(), 9000);
+  let res;
+  try{
+    res = await fetch('/api/ask',{ method:'POST', headers:{'content-type':'application/json'},
+      body:JSON.stringify({question:rawQ, history, serials:_ctxSerials(a.items), formation:fmName}), signal:ctl.signal });
+  }catch(e){ clearTimeout(to); return false; }
+  if(!res.ok || !res.body){ clearTimeout(to); return false; }
+  ASKP.thread=ASKP.thread.filter(m=>!m.temp);
+  const msg={role:'bot',html:'<div class="ans-prose"></div>',ans:true,q:rawQ};
+  ASKP.thread.push(msg);
+  let acc='';
+  const paint=()=>{ msg.html='<div class="ans-prose">'+_linkifySer(acc)+'<span class="curs"></span></div>'; _renderPaneThread(); _scrollAskPane(); };
+  try{
+    const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='';
+    while(true){ const {done,value}=await reader.read(); clearTimeout(to); if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop();
+      let grew=false;
+      for(const ln of lines){ const s=ln.trim(); if(!s.startsWith('data:')) continue; const d=s.slice(5).trim(); if(!d || d==='[DONE]') continue;
+        try{ const j=JSON.parse(d); if(j.response){ acc+=j.response; grew=true; } }catch(e){} }
+      if(grew) paint();
+    }
+  }catch(e){ /* keep whatever streamed */ }
+  clearTimeout(to);
+  if(!acc.trim()){ ASKP.thread=ASKP.thread.filter(m=>m!==msg); return false; }
+  msg.html = '<div class="ans-prose">'+_linkifySer(acc.trim())+'</div>'
+    + a.items.slice(0,4).map(s=>_ansCard(s,'serials')).join('')
+    + '<div class="closing">Enhanced answer, grounded in the serials above — tap one for the full breakdown.</div>';
+  _renderPaneThread(); _scrollAskPane();
+  return true;
+}
+
 /* short follow-ups ("what about for artillery?") inherit the previous topic */
 const _FOLLOW = ["what about","how about","and for","what of","same for","and with","what if"];
 function _answerHTML(q, sem, rawQ){
@@ -1276,6 +1337,10 @@ async function askAll(text){
   _renderPaneThread(); _scrollAskPane();
   const sem = _embState==='ready' ? await _semScores(effQ) : null;
   state.lastSem = sem;
+  if(state.enhanced && navigator.onLine!==false){
+    const ok = await _askEnhanced(effQ, q, sem).catch(()=>false);
+    if(ok){ setTimeout(_scrollAskPane, 320); return; }
+  }
   if(!sem) await new Promise(r=>setTimeout(r,220)); // keep the typing beat when answering instantly
   ASKP.thread=ASKP.thread.filter(m=>!m.temp);
   ASKP.thread.push({role:'bot',html:_answerHTML(effQ, sem, q),ans:true,q});
@@ -1289,7 +1354,7 @@ function _reanswer(){ if(!state.lastAsk) return;
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastSem:null, lastTopic:null };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastSem:null, lastTopic:null, enhanced:false };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -1829,6 +1894,9 @@ function init(){
     const text='Ask assistant — unanswered questions (June 2026 edition)\n'+arr.map(x=>`${x.t} — ${x.q}`).join('\n');
     if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>{ _mc.textContent='Copied ✓'; setTimeout(()=>{ _mc.textContent='Copy list'; },1400); }).catch(()=>{}); } };
   const _mk=$("#missClear"); if(_mk) _mk.onclick=()=>{ try{ localStorage.removeItem('csi-misses'); }catch(e){} renderMisses(); };
+  try{ state.enhanced = localStorage.getItem('csi-enhanced')==='1'; }catch(e){}
+  const _et=$("#enhToggle"); if(_et){ _et.checked=state.enhanced;
+    _et.addEventListener('change', ()=>{ state.enhanced=_et.checked; try{ localStorage.setItem('csi-enhanced', _et.checked?'1':'0'); }catch(e){} _updateAskStatus(); }); }
   $("#btnSaved").onclick = ()=>{ if(state.section!=="serials") showSection("serials"); state.savedOnly=!state.savedOnly; updateSavedIcon(); renderSerials(); scrollHome(); };
   $("#logoHome").onclick = ()=>{ state.savedOnly=false; updateSavedIcon(); showSection('feed'); renderFeed(); };
   $("#logoHome").onkeydown = (e)=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); $("#logoHome").click();} };
