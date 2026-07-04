@@ -1006,7 +1006,9 @@ function _rankAll(q,f,sem){
   let pool=ALL_SERIALS.slice();
   if(state.fTheatre!=='ALL') pool=pool.filter(s=>s.conflict===state.fTheatre);
   if(state.fVerdict!=='ALL') pool=pool.filter(s=>s.verdict===state.fVerdict);
-  if(state.fFormation!=='ALL') pool=pool.filter(s=>s.formations.includes(state.fFormation));
+  // a formation named in the question overrides the my-formation facet —
+  // otherwise asking about another formation returns nothing
+  if(state.fFormation!=='ALL' && !f.formation) pool=pool.filter(s=>s.formations.includes(state.fFormation));
   const useSem = sem && Object.keys(sem).length;
   return pool.map(s=>{
     let sc=0;
@@ -1040,9 +1042,9 @@ function answerForAll(q, sem){
 /* Pick the decision card matching the reader's formation: divisions get the
    division card, units/brigades get the second-echelon card. */
 const _DIVS = new Set(["3DIV","9DIV","6DIV"]);
-function _echCard(id){
+function _echCard(id, fmOverride){
   const a=APP[id]||{}, ech=(PKG[PKG_OF[id]]||{}).echelons||["Division","Brigade"];
-  const fm=state.fFormation;
+  const fm=fmOverride || state.fFormation;
   if(fm!=='ALL' && !_DIVS.has(fm)) return {card:a.bde||{}, ech:ech[1]};
   return {card:a.div||{}, ech:ech[0]};
 }
@@ -1078,16 +1080,18 @@ function synthAll(a){
       + a.items.map(s=>_ansCard(s,'serials')).join('');
   }
   const items=a.items, n=items.length;
-  const fmName = state.fFormation!=='ALL' && (FORMATIONS_ALL[state.fFormation]||{}).n;
+  /* the formation named in the question outranks the my-formation facet */
+  const effFm = (a.f && a.f.formation) || (state.fFormation!=='ALL' ? state.fFormation : null);
+  const fmName = effFm && (FORMATIONS_ALL[effFm]||{}).n;
   /* formation line: the top serial's decision, at the reader's echelon */
   const forLine = ()=>{ if(!fmName || !items.length) return '';
-    const e=_echCard(items[0].id); if(!e.card.d) return '';
+    const e=_echCard(items[0].id, effFm); if(!e.card.d) return '';
     return `<div class="ans-for"><b>For ${fmName} (${e.ech.toLowerCase()}) —</b> ${e.card.d} <span class="cite">SER ${items[0].id}</span></div>`; };
   /* field answers: owner / trigger / measure / trade-off from the decision cards */
   if(a.mode==='field'){
     const key={owner:'o',trigger:'t',measure:'m',tradeoff:'x'}[a.f.field];
     const label={owner:'Ownership',trigger:'Triggers',measure:'Measures of success',tradeoff:'Trade-offs'}[a.f.field];
-    const rows=items.slice(0,3).map(s=>{ const e=_echCard(s.id); const v=e.card[key]; if(!v) return '';
+    const rows=items.slice(0,3).map(s=>{ const e=_echCard(s.id, effFm); const v=e.card[key]; if(!v) return '';
       return `<div class="ans-frow" data-open="${s.id}"><div class="af-t">${s.title}</div><p>${v} <span class="cite">SER ${s.id} · ${e.ech}</span></p></div>`; }).join('');
     return `<div class="lead"><b>${label}</b> — from the decision cards${fmName?` at ${fmName}'s echelon`:''}:</div>${rows}`
       + `<div class="closing">Tap a serial for the full decision card — owner, trigger, trade-off and measure together.</div>`;
