@@ -215,7 +215,7 @@ a{color:inherit}
 .pop p b{color:var(--text)}
 
 /* ============ SCROLL AREA ============ */
-.scroll{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;position:relative;padding-bottom:24px}
+.scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;position:relative;padding-bottom:24px}
 .edition-banner{display:flex;align-items:center;gap:13px;margin:16px 16px 6px;padding:14px 17px;background:#1C1B17;border-radius:13px}
 .edition-banner .eb-ic{width:26px;height:26px;color:var(--gold);flex:0 0 auto}
 .edition-banner .eb-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -324,7 +324,7 @@ a{color:inherit}
 #pane-search.on{display:flex;flex-direction:column;position:absolute;inset:0;background:var(--bg);z-index:40;overflow:hidden}
 #pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>#askStatus,#pane-search>#askExamples,#pane-search>#searchFacets{flex:0 0 auto}
 #pane-search>.theatre-sub{padding-left:18px;padding-right:18px}
-.ask-pane-thread{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:16px;padding:10px 16px 12px}
+.ask-pane-thread{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:16px;padding:10px 16px 12px}
 .ask-pane-thread>*:first-child{margin-top:auto}
 /* input row, in-flow at the bottom of the chat container */
 .ask-dock{flex:0 0 auto;display:none;gap:8px;padding:9px 12px;background:var(--bg);border-top:1px solid var(--line)}
@@ -398,7 +398,7 @@ a{color:inherit}
 .psec{margin:20px 16px 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:17px 16px}
 .psec-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
 .psec-title{font-family:var(--disp);font-weight:700;font-size:21px;color:var(--text);letter-spacing:-.005em}
-.psec-right{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);text-align:right;flex:0 0 auto}
+.psec-right{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);text-align:right;flex:0 1 auto;min-width:0}
 /* three command sections (Opportunities / Vulnerabilities / Capability Development) */
 .psec.fs{background:none;border:none;padding:0;margin:24px 0 0}
 .psec.fs .psec-head{margin:0 16px 11px}
@@ -458,7 +458,7 @@ a{color:inherit}
 
 /* ============ DETAIL VIEW ============ */
 .detail{display:none}
-.detail.on{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px}
+.detail.on{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px}
 .app.detail-open .topbar,.app.detail-open .scroll{display:none}
 .app.ask-open .topbar,.app.ask-open .scroll,.app.ask-open .bottomnav{display:none}
 .dt-bar{position:sticky;top:0;z-index:55;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px;gap:12px}
