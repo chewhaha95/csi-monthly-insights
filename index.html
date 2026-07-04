@@ -44,6 +44,11 @@
   --body:'IBM Plex Sans',system-ui,sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,monospace;
   --topH:108px;
+  /* measured bar heights (JS refines); CSS defaults already include the
+     safe-area inset so the Ask pane never sits under the nav even if the
+     first measurement runs before iOS reports the inset */
+  --barH:56px;
+  --navH:calc(58px + env(safe-area-inset-bottom,0px));
 }
 :root[data-theme="dark"]{
   --bg:#16150F; --surface:#211F17; --surface-2:#1B1A13; --raise:#272419;
@@ -313,10 +318,11 @@ a{color:inherit}
    pinned at its bottom — so the page itself never scrolls and the on-screen
    keyboard can't shove it up. --barH/--navH are measured heights; --kb is the
    keyboard height (VisualViewport). */
-#pane-search.on{display:flex;flex-direction:column;position:fixed;top:var(--barH,56px);left:0;right:0;bottom:var(--navH,66px);max-width:480px;margin:0 auto;background:var(--bg);z-index:40;overflow:hidden}
+#pane-search.on{display:flex;flex-direction:column;position:fixed;top:var(--barH);left:0;right:0;bottom:var(--navH);max-width:480px;margin:0 auto;background:var(--bg);z-index:40;overflow:hidden}
 .app.kbd #pane-search.on{bottom:var(--kb,0px)}
 #pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>#askStatus,#pane-search>#askExamples,#pane-search>#searchFacets{flex:0 0 auto}
-.ask-pane-thread{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:16px;padding:10px 16px 12px}
+#pane-search>.theatre-sub{padding-left:18px;padding-right:18px}
+.ask-pane-thread{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:16px;padding:10px 16px 12px}
 .ask-pane-thread>*:first-child{margin-top:auto}
 /* input row, in-flow at the bottom of the chat container */
 .ask-dock{flex:0 0 auto;display:none;gap:8px;padding:9px 12px;background:var(--bg);border-top:1px solid var(--line)}
@@ -1065,6 +1071,7 @@ function initAsk(){
     ASKP.thread.push({role:'bot', html:`<div class="lead">Ask in plain English — I answer from June's <b>14 serials</b> and cite each one. Tap an example, or type your own.</div>`}); }
   renderAskPane();
   _updateAskStatus();
+  _scrollAskPane(); // re-render resets the thread's scroll; pin back to the newest message
   loadEmbedder(); // lazy, best-effort; falls back to keyword search if it can't load
 }
 /* The thread scrolls inside the fixed chat container — just keep it pinned to
@@ -1534,14 +1541,27 @@ function buildChecklist(){
 }
 
 /* ===================== WIRING ===================== */
-function _setNavH(){ const n=$(".bottomnav"); if(n) document.documentElement.style.setProperty('--navH', n.offsetHeight+'px'); }
-function _setBarH(){ const b=$(".topbar"); if(b) document.documentElement.style.setProperty('--barH', b.offsetHeight+'px'); }
+/* Keep --barH/--navH in sync with the real bar heights. Guards skip zero
+   (a hidden nav must not collapse the Ask pane), and a ResizeObserver catches
+   late growth — fonts swapping in, and iOS reporting the safe-area inset only
+   after first paint, which otherwise leaves the input under the nav. */
+function _setNavH(){ const n=$(".bottomnav"); if(n && n.offsetHeight>0) document.documentElement.style.setProperty('--navH', n.offsetHeight+'px'); }
+function _setBarH(){ const b=$(".topbar"); if(b && b.offsetHeight>0) document.documentElement.style.setProperty('--barH', b.offsetHeight+'px'); }
 function _setBars(){ _setNavH(); _setBarH(); }
 function init(){
   buildMerged();
   loadPackage(state.tab);
   buildTabs(); renderFeed(); renderSerials();
-  _setBars(); window.addEventListener('resize', _setBars); window.addEventListener('orientationchange', ()=>setTimeout(_setBars,200));
+  _setBars();
+  window.addEventListener('resize', _setBars);
+  window.addEventListener('load', _setBars);
+  window.addEventListener('orientationchange', ()=>setTimeout(_setBars,200));
+  if(window.ResizeObserver){ const ro=new ResizeObserver(_setBars);
+    [$(".bottomnav"), $(".topbar")].forEach(el=>{ if(!el) return;
+      // border-box: the safe-area inset arrives as PADDING, which never changes
+      // the content box — observing that would miss it entirely
+      try{ ro.observe(el, {box:'border-box'}); }catch(e){ ro.observe(el); } }); }
+  [300,1000,3000].forEach(ms=>setTimeout(_setBars, ms)); // catch iOS reporting the inset late
   { const th = new Set(ALL_SERIALS.map(s=>s.theatre)).size;
     $("#popCount").textContent = ALL_SERIALS.length + " serials";
     $("#popScope").textContent = `across all four packages — Manoeuvre, Sense & Strike, Combat Support & Expeditionary — spanning ${th} reporting theatre${th===1?'':'s'}.`; }
@@ -1565,8 +1585,11 @@ function init(){
     // visual viewport (not window.innerHeight), so the gap below it is the
     // keyboard height; keep the dock there via a --kb variable.
     const _kb=()=>{ if(!vv||!_app.classList.contains('kbd')) return; const h=Math.max(0, window.innerHeight - vv.height - vv.offsetTop); _root.style.setProperty('--kb', h+'px'); };
-    _si.addEventListener('focus', ()=>{ _app.classList.add('kbd'); _kb(); });
-    _si.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _root.style.setProperty('--kb','0px'); });
+    _si.addEventListener('focus', ()=>{ _app.classList.add('kbd'); _kb();
+      // iOS auto-scrolls the document to "reveal" the focused field even though
+      // nothing needs to move — undo it so the fixed pane stays put.
+      setTimeout(()=>window.scrollTo(0,0), 60); setTimeout(()=>window.scrollTo(0,0), 260); });
+    _si.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _root.style.setProperty('--kb','0px'); _setBars(); });
     if(vv){ vv.addEventListener('resize', _kb); vv.addEventListener('scroll', _kb); }
   }
   $("#pane-search").addEventListener('click', e=>{
