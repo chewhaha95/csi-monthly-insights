@@ -398,6 +398,12 @@ a{color:inherit}
 .pack-title{font-family:var(--disp);font-weight:700;font-size:27px;line-height:1.16;letter-spacing:-.01em;color:var(--text);margin-bottom:12px}
 .pack-lede{font-size:14.5px;line-height:1.55;color:var(--text-2)}
 .pack-lede b{color:var(--text);font-weight:700}
+.pack-cal{margin-top:10px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);line-height:1.5}
+/* per-serial sourcing confidence (detail view) */
+.conf{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);margin:11px 0 2px;line-height:1.45}
+.conf i{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.conf.ok i{background:var(--green)}
+.conf.lone i{background:var(--amber)}
 .statcards{display:flex;gap:9px;margin-top:17px}
 .statcard{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px 11px}
 .sc-k{font-family:var(--mono);font-size:8px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);line-height:1.35;min-height:22px}
@@ -949,6 +955,7 @@ function _rankAll(q,f,sem){
   let pool=ALL_SERIALS.slice();
   if(state.fTheatre!=='ALL') pool=pool.filter(s=>s.conflict===state.fTheatre);
   if(state.fVerdict!=='ALL') pool=pool.filter(s=>s.verdict===state.fVerdict);
+  if(state.fFormation!=='ALL') pool=pool.filter(s=>s.formations.includes(state.fFormation));
   const useSem = sem && Object.keys(sem).length;
   return pool.map(s=>{
     let sc=0;
@@ -1108,7 +1115,7 @@ function _reanswer(){ if(!state.lastAsk) return;
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", lastAsk:null, lastSem:null };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastSem:null };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -1191,25 +1198,31 @@ function serialsFilterBar(){
   const f = state.serialFilter || 'ALL';
   const chips = `<button class="serchip${f==='ALL'?' on':''}" data-filter="ALL">All</button>`
     + PACKAGES.map(p=>`<button class="serchip${f===p.k?' on':''}${p.live?'':' off'}" data-filter="${p.k}"${p.live?'':' disabled'}>${p.label}</button>`).join('');
-  return `<div class="serfilter">${chips}</div>`;
+  const ff = state.serialFormation || 'ALL';
+  const fchips = `<span class="facet-lbl">Formation</span><button class="serchip${ff==='ALL'?' on':''}" data-fform="ALL">All</button>`
+    + Object.keys(FORMATIONS_ALL).map(k=>`<button class="serchip${ff===k?' on':''}" data-fform="${k}">${FORMATIONS_ALL[k].n}</button>`).join('');
+  return `<div class="serfilter">${chips}</div><div class="serfilter">${fchips}</div>`;
 }
 function renderSerials(){
   const c = $("#serialsContent");
   const f = state.serialFilter || 'ALL';
+  const ff = state.serialFormation || 'ALL';
   let list = ALL_SERIALS.slice();
   if(f!=='ALL') list = list.filter(s=>PKG_OF[s.id]===f);
+  if(ff!=='ALL') list = list.filter(s=>s.formations.includes(ff));
   if(state.savedOnly) list = list.filter(s=>state.saved.has(s.id));
   const title = state.savedOnly ? 'Saved' : 'Serials';
+  const forLbl = ff!=='ALL' ? ` for ${(FORMATIONS_ALL[ff]||{}).n}` : '';
   const sub = state.savedOnly
     ? `${list.length} serial${list.length===1?'':'s'} saved`
     : (f==='ALL'
-        ? `All ${list.length} serials across packages · June 2026`
-        : `${list.length} ${(PACKAGES.find(x=>x.k===f)||{}).label} serial${list.length===1?'':'s'} · June 2026`);
+        ? `${ff==='ALL'?'All ':''}${list.length} serial${list.length===1?'':'s'}${forLbl} · June 2026`
+        : `${list.length} ${(PACKAGES.find(x=>x.k===f)||{}).label} serial${list.length===1?'':'s'}${forLbl} · June 2026`);
   let html = `<h1 class="section-title" style="font-size:28px;padding:18px 16px 2px">${title}</h1>`
     + `<div class="theatre-sub" style="padding-bottom:8px">${sub}</div>`
     + serialsFilterBar();
   if(!list.length){
-    html += `<div class="empty"><b>${state.savedOnly?'No saved serials':'Nothing here yet'}</b><p>${state.savedOnly?'Tap the bookmark on any serial to save it here for your O-group.':'This package is in development — its serials will appear here in a later edition.'}</p></div>`;
+    html += `<div class="empty"><b>${state.savedOnly?'No saved serials':'No serials match'}</b><p>${state.savedOnly?'Tap the bookmark on any serial to save it here for your O-group.':'No serials this edition for that combination — clear a filter to widen the view.'}</p></div>`;
     c.innerHTML = html; return;
   }
   PACKAGES.forEach(p=>{
@@ -1232,7 +1245,10 @@ function searchFacetsHTML(){
     + theatres.map(t=>`<button class="serchip${tv===t.k?' on':''}" data-facet="theatre" data-val="${t.k}">${t.l}</button>`).join('');
   const vchips = `<span class="facet-lbl">Outcome</span><button class="serchip${vv==='ALL'?' on':''}" data-facet="verdict" data-val="ALL">All</button>`
     + VERDICT_FACETS.map(v=>`<button class="serchip${vv===v.k?' on':''}" data-facet="verdict" data-val="${v.k}">${v.l}</button>`).join('');
-  return `<div class="facet-row">${tchips}</div><div class="facet-row">${vchips}</div>`;
+  const fv = state.fFormation;
+  const fchips = `<span class="facet-lbl">Formation</span><button class="serchip${fv==='ALL'?' on':''}" data-facet="formation" data-val="ALL">All</button>`
+    + Object.keys(FORMATIONS_ALL).map(k=>`<button class="serchip${fv===k?' on':''}" data-facet="formation" data-val="${k}">${FORMATIONS_ALL[k].n}</button>`).join('');
+  return `<div class="facet-row">${tchips}</div><div class="facet-row">${vchips}</div><div class="facet-row">${fchips}</div>`;
 }
 const statusClass = st => { const x=st.toLowerCase(); if(x.includes("action")||x.includes("strain")||x.includes("now")) return "st-now"; if(x.includes("watch")||x.includes("weak")) return "st-watch"; return "st-high"; };
 function secOpen(title, right){ return `<section class="psec"><div class="psec-head"><h2 class="psec-title">${title}</h2><span class="psec-right">${right}</span></div>`; }
@@ -1287,6 +1303,7 @@ function packHTML(){
     <div class="pack-kicker">${PACK.kicker}</div>
     <h1 class="pack-title">What changed this month ${PACK.titleLine||'for the formation'}.</h1>
     <p class="pack-lede">${F.bluf || PACK.commandLens}</p>
+    <p class="pack-cal">First-cut analysis from open-source reporting — divisions and brigades calibrate and validate before adoption.</p>
   </div>`;
   h += frameSectionHTML('opp','Opportunities','Developments to exploit', F.opportunities);
   h += frameSectionHTML('vuln','Vulnerabilities','Where formations are exposed', F.vulnerabilities);
@@ -1327,9 +1344,10 @@ function detailHTML(s){
       s.sources.map((x,i)=>`<a href="${x.u}" target="_blank" rel="noopener"><span class="src-n">[${i+1}]</span><span class="src-name">${x.n}</span><span class="src-go">↗</span></a>`).join('')}</div>` : '';
   return `<div class="dpanel${s.image?'':' no-img'}">${imgTag(s)}${s.image?'':'<div class="pcode">'+tCode(s)+'</div>'}${creditTag(s)}</div>
     <div class="dwrap">
-      <div class="dkicker"><span class="vdot ${s.verdict}"></span><span class="sid">SER ${s.id}</span><span>${KIND_LABEL[s.kind]}</span><span>·</span><span>${s.theatre}${s.multi?" · multi-theatre":""}</span></div>
+      <div class="dkicker"><span class="vdot ${s.verdict}"></span><span class="sid">SER ${s.id}</span><span>${KIND_LABEL[s.kind]}</span><span>·</span><span>${s.theatre}${s.multi?" · multi-theatre":""}</span>${s.dates?`<span>·</span><span>${s.dates}</span>`:''}</div>
       <h1>${s.title}</h1>
       <div class="dforms">${formsPills(s.formations)}</div>
+      <div class="conf ${s.sources.length>=2?'ok':'lone'}"><i></i>${s.sources.length>=2?`Corroborated · ${s.sources.length} open sources`:'Single open source'} · first-cut analysis — calibrate before adoption</div>
       ${blocks}
       <div class="appwrap">
         <div class="ah"><b></b>What this means for ${ech[0].toLowerCase()} and ${ech[1].toLowerCase()}</div>
@@ -1599,7 +1617,9 @@ function init(){
     const ex=e.target.closest('[data-ask]');
     if(ex){ if(_si){ _si.value=''; _si.blur(); } askAll(ex.dataset.ask); return; }
     const chip=e.target.closest('[data-facet]');
-    if(chip){ if(chip.dataset.facet==='theatre') state.fTheatre=chip.dataset.val; else state.fVerdict=chip.dataset.val; $("#searchFacets").innerHTML=searchFacetsHTML(); _reanswer(); return; }
+    if(chip){ const fc=chip.dataset.facet;
+      if(fc==='theatre') state.fTheatre=chip.dataset.val; else if(fc==='formation') state.fFormation=chip.dataset.val; else state.fVerdict=chip.dataset.val;
+      $("#searchFacets").innerHTML=searchFacetsHTML(); _reanswer(); return; }
     const op=e.target.closest('[data-open]');
     if(op){ openDetail(op.dataset.open); return; }
   });
@@ -1608,6 +1628,8 @@ function init(){
   $("#serialsContent").addEventListener('click', e=>{
     const fl = e.target.closest('[data-filter]');
     if(fl && !fl.disabled){ state.serialFilter = fl.dataset.filter; renderSerials(); scrollHome(); return; }
+    const fm = e.target.closest('[data-fform]');
+    if(fm){ state.serialFormation = fm.dataset.fform; renderSerials(); scrollHome(); return; }
     const bm = e.target.closest('[data-bm]');
     if(bm){ e.stopPropagation(); toggleSave(bm.dataset.bm); flashSaved(bm); return; }
     const card = e.target.closest('[data-id]');
