@@ -44,9 +44,11 @@
   --body:'IBM Plex Sans',system-ui,sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,monospace;
   --topH:108px;
-  /* gap between the bottom of the visual viewport and the layout viewport —
-     i.e. the on-screen keyboard height. Updated live from VisualViewport. */
-  --vvb:0px;
+  /* the visual viewport's offset and height (VisualViewport API, updated live).
+     The app shell is pinned to these, so when iOS pans or shrinks the viewport
+     for the keyboard, the shell follows exactly. */
+  --vvt:0px;
+  --vvh:100%;
 }
 :root[data-theme="dark"]{
   --bg:#16150F; --surface:#211F17; --surface-2:#1B1A13; --raise:#272419;
@@ -76,7 +78,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
    main.scroll — so iOS can't shove the page around, the header can't slide
    under the status bar, and the nav can't fall off the bottom. --vvb keeps the
    shell above the on-screen keyboard. */
-.app{position:fixed;top:0;left:0;right:0;bottom:var(--vvb,0px);max-width:480px;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;min-height:0}
+.app{position:fixed;top:var(--vvt,0px);left:0;right:0;height:var(--vvh,100%);max-width:480px;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;min-height:0}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 a{color:inherit}
 
@@ -338,6 +340,9 @@ a{color:inherit}
 .ask-send{flex:0 0 auto;width:40px;height:40px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center}
 .ask-send svg{width:19px;height:19px}
 .app.kbd .bottomnav{display:none}
+/* while typing the pane is only as tall as the space above the keyboard —
+   collapse the header rows so the conversation and the input keep it all */
+.app.kbd #pane-search>.section-title,.app.kbd #pane-search>.theatre-sub,.app.kbd #pane-search>#askStatus,.app.kbd #pane-search>#askExamples,.app.kbd #pane-search>#searchFacets{display:none}
 .ask-pane-thread .msg.user{align-self:flex-end;max-width:85%;background:var(--red);color:#fff;font-size:14px;line-height:1.4;padding:9px 13px;border-radius:14px 14px 4px 14px}
 .ask-pane-thread .ans-prose{font-size:14px;line-height:1.6;color:var(--ink);margin:8px 0 2px}
 .ask-pane-thread .cite{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--red);white-space:nowrap;vertical-align:1px}
@@ -1544,13 +1549,15 @@ function buildChecklist(){
 }
 
 /* ===================== WIRING ===================== */
-/* Keep the app shell bound to the visual viewport: --vvb is the gap between
-   the layout viewport bottom and the visual viewport bottom — i.e. the
-   on-screen keyboard height (0 when closed). The shell's bottom tracks it, so
-   the whole UI (input included) rises above the keyboard. */
+/* Pin the app shell to the visual viewport. iOS both SHRINKS the viewport for
+   the keyboard and PANS it (offsetTop) to reveal the focused field — tracking
+   offset + height means the shell always exactly fills what's visible: header
+   at the top of the screen, input right above the keyboard. */
 function _vvUpd(){ const vv=window.visualViewport; if(!vv) return;
-  const gap=Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-  document.documentElement.style.setProperty('--vvb', gap+'px'); }
+  const r=document.documentElement.style;
+  r.setProperty('--vvt', Math.max(0, vv.offsetTop)+'px');
+  r.setProperty('--vvh', vv.height+'px');
+  if(document.querySelector('.app').classList.contains('kbd')) _scrollAskPane(); }
 /* Reset the app's scroll containers (the document itself never scrolls). */
 function scrollHome(){ const m=$("#scroll"); if(m) m.scrollTop=0; const d=$("#detail"); if(d) d.scrollTop=0; }
 function init(){
@@ -1558,6 +1565,8 @@ function init(){
   loadPackage(state.tab);
   buildTabs(); renderFeed(); renderSerials();
   if(window.visualViewport){ visualViewport.addEventListener('resize', _vvUpd); visualViewport.addEventListener('scroll', _vvUpd); _vvUpd(); }
+  window.addEventListener('resize', _vvUpd);
+  window.addEventListener('orientationchange', ()=>setTimeout(_vvUpd,250));
   { const th = new Set(ALL_SERIALS.map(s=>s.theatre)).size;
     $("#popCount").textContent = ALL_SERIALS.length + " serials";
     $("#popScope").textContent = `across all four packages — Manoeuvre, Sense & Strike, Combat Support & Expeditionary — spanning ${th} reporting theatre${th===1?'':'s'}.`; }
@@ -1581,7 +1590,10 @@ function init(){
     // typing and undo iOS's needless focus auto-scroll of the (unscrollable) page.
     _si.addEventListener('focus', ()=>{ _app.classList.add('kbd'); _vvUpd();
       setTimeout(()=>window.scrollTo(0,0), 60); setTimeout(()=>window.scrollTo(0,0), 260); });
-    _si.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _vvUpd(); setTimeout(()=>window.scrollTo(0,0), 60); });
+    _si.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _vvUpd();
+      // land the thread on the newest message once the keyboard has fully closed
+      setTimeout(()=>{ window.scrollTo(0,0); _vvUpd(); _scrollAskPane(); }, 60);
+      setTimeout(()=>{ _vvUpd(); _scrollAskPane(); }, 450); });
   }
   $("#pane-search").addEventListener('click', e=>{
     const ex=e.target.closest('[data-ask]');
