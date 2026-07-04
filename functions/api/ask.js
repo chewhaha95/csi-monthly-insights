@@ -5,7 +5,11 @@
    context; this function only turns them into a natural-language answer. It
    stores and logs nothing. Requires an AI binding named "AI" on the Pages
    project (dashboard → Settings → Functions → Bindings); until that binding
-   exists it returns 503 and the app answers on-device instead. */
+   exists it returns 503 and the app answers on-device instead.
+
+   Note: Pages bindings only attach to deployments created AFTER the binding
+   is added — adding it in the dashboard requires one redeploy to take
+   effect (this commit exists to trigger that redeploy). */
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const MAX_CONTEXT_CHARS = 8000;
