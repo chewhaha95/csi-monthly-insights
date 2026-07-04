@@ -362,6 +362,22 @@ a{color:inherit}
 .ans-ict .ai-std{font-size:12.5px;color:var(--ink);line-height:1.45}
 .ans-ict .ai-std b{color:var(--text)}
 .ans-grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin:13px 0 2px}
+/* answer tools: copy + suggested follow-ups; source-count chip on cited cards */
+.ans-tools{margin-top:10px}
+.ans-copy{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);border:1px solid var(--line-2);border-radius:8px;padding:5px 10px;cursor:pointer}
+.ans-copy:hover{color:var(--red);border-color:var(--red)}
+.ans-next{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:11px}
+.an-l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.serchip.sgg{font-family:var(--body);font-size:12px;letter-spacing:0;padding:6px 11px}
+.ac-cf{font-family:var(--mono);white-space:nowrap}
+.ac-cf.ok{color:var(--green)}
+.ac-cf.lone{color:var(--amber)}
+/* assistant-gaps list (About) */
+.miss-list{margin:10px 0 12px}
+.miss-row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:13px;color:var(--ink);padding:7px 0;border-bottom:1px solid var(--line)}
+.miss-row small{font-family:var(--mono);font-size:9.5px;color:var(--text-3);flex:0 0 auto}
+.miss-row.none{color:var(--text-3);border-bottom:none}
+.miss-actions{display:flex;gap:8px}
 .facet-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 10px;align-items:center}
 .facet-row::-webkit-scrollbar{display:none}
 .facet-lbl{flex:0 0 auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin-right:2px}
@@ -743,6 +759,12 @@ a{color:inherit}
       <h2 class="ph">About</h2>
       <p class="pintro">Conflict Studies &amp; Insights — the <b>monthly digest</b>. Edition Jun 2026 — four packages: Manoeuvre, Sense &amp; Strike, Combat Support and Expeditionary.</p>
       <div class="about-block">
+        <div class="ab-h">Assistant gaps — on this device</div>
+        <p>Questions the Ask assistant could not answer, kept only on this device. Share them with the editors to shape the next edition.</p>
+        <div id="missList" class="miss-list"></div>
+        <div class="miss-actions"><button class="serchip" id="missCopy">Copy list</button><button class="serchip" id="missClear">Clear</button></div>
+      </div>
+      <div class="about-block">
         <div class="ab-h">Source feed — the weekly brief</div>
         <p>This digest is the formation-level distillation of the <b>Conflict Studies &amp; Insights weekly brief</b>, which tracks the signals across the five conflict theatres. The weekly answers "what's happening"; this monthly answers "so what — and what to rehearse".</p>
         <div class="src-feed">
@@ -912,7 +934,8 @@ function _lead(f,mode,n){
 }
 function _ansCard(s,mode){
   const line = mode==='ict'? ICT[s.id].dec : SUMMARY[s.id];
-  return `<div class="ans-card" data-open="${s.id}"><span class="vd ${s.verdict}"></span><div class="ac-b"><div class="ac-t">${s.title}</div><div class="ac-s">${line}</div><div class="ac-m">SER ${s.id} · ${KIND_LABEL[s.kind]} · ${s.theatre}</div></div></div>`;
+  const cf = (s.sources||[]).length>=2 ? `<span class="ac-cf ok">● ${s.sources.length} src</span>` : `<span class="ac-cf lone">● 1 src</span>`;
+  return `<div class="ans-card" data-open="${s.id}"><span class="vd ${s.verdict}"></span><div class="ac-b"><div class="ac-t">${s.title}</div><div class="ac-s">${line}</div><div class="ac-m">SER ${s.id} · ${KIND_LABEL[s.kind]} · ${s.theatre}${s.dates?` · ${s.dates}`:''} ${cf}</div></div></div>`;
 }
 function renderAnswer(a){
   if(a.type==='bluf') return `<div class="lead">Bottom line for the ${PACKAGES.find(x=>x.k===state.tab).label} package:</div><div class="msg-bluf">${BLUF_TEXT}</div><div class="ans-link" data-jump="brief">Open the Commander's Brief →</div>`;
@@ -1024,6 +1047,8 @@ function _echCard(id){
   return {card:a.div||{}, ech:ech[0]};
 }
 const _firstSent = (t,n)=>{ const parts=String(t||'').split('. '); const out=parts.slice(0,n).join('. '); return out + (parts.length>n && !out.endsWith('.') ? '.' : ''); };
+function _ictBlock(s){ const t=ICT[s.id]; if(!t) return '';
+  return `<div class="ans-ict" data-open="${s.id}"><div class="ai-t">${s.title}</div><div class="ai-fmt">${t.fmt}</div><p class="ai-set">${t.set}</p><ol>${t.run.map(r=>`<li>${r}</li>`).join('')}</ol><div class="ai-std"><b>Standard —</b> ${t.std}</div></div>`; }
 const _counterText = s => { const b=(s.blocks||[]).find(x=>/counter/i.test(x.l)); return b ? _firstSent(b.t,2) : (SUMMARY[s.id]||''); };
 function _leadAll(f,mode,n){
   const fm = f.formation && (FORMATIONS_ALL[f.formation]||{}).n;
@@ -1075,8 +1100,7 @@ function synthAll(a){
   }
   /* rehearse answers: the full ICT serial, ready to lift into a training plan */
   if(a.mode==='ict'){
-    const blocks=items.slice(0,2).map(s=>{ const t=ICT[s.id]; if(!t) return '';
-      return `<div class="ans-ict" data-open="${s.id}"><div class="ai-t">${s.title}</div><div class="ai-fmt">${t.fmt}</div><p class="ai-set">${t.set}</p><ol>${t.run.map(r=>`<li>${r}</li>`).join('')}</ol><div class="ai-std"><b>Standard —</b> ${t.std}</div></div>`; }).join('');
+    const blocks=items.slice(0,2).map(_ictBlock).join('');
     return `<div class="lead">${_leadAll(a.f,'ict',Math.min(n,2))}</div>${blocks}`
       + `<div class="closing">Rehearsal serials are first-cut designs — calibrate to the formation before running them.</div>`;
   }
@@ -1149,7 +1173,70 @@ function _updateAskStatus(){
 /* ----- Ask pane thread ----- */
 const ASK_EXAMPLES = ["How do we counter fibre-optic drones?","Who owns the casualty-evacuation change?","What should engineers rehearse?","List all threats this month"];
 const ASKP = { thread: [], seeded:false };
-function _renderPaneThread(){ const t=$("#askPaneThread"); if(!t) return; t.innerHTML = ASKP.thread.map(m=> m.role==='user'?`<div class="msg user">${esc(m.text)}</div>`:`<div class="msg bot">${m.html}</div>`).join(''); }
+function _renderPaneThread(){ const t=$("#askPaneThread"); if(!t) return;
+  t.innerHTML = ASKP.thread.map((m,i)=> m.role==='user'
+    ? `<div class="msg user">${esc(m.text)}</div>`
+    : `<div class="msg bot">${m.html}${m.ans?`<div class="ans-tools"><button class="ans-copy" data-copyans="${i}">Copy answer</button></div>`:''}</div>`).join(''); }
+/* plain-text export of an answer, for pasting into notes and message threads */
+function copyAnswer(i, btn){
+  const m=ASKP.thread[i]; if(!m) return;
+  const el=btn.closest('.msg.bot'); if(!el) return;
+  const clone=el.cloneNode(true);
+  clone.querySelectorAll('.ans-tools,.ans-next').forEach(x=>x.remove());
+  document.body.appendChild(clone); const body=clone.innerText.trim(); clone.remove();
+  const text=(m.q?`Q: ${m.q}\n\n`:'')+body+`\n\n— Conflict Studies & Insights · June 2026 digest · first-cut analysis from open sources, calibrate before adoption`;
+  const done=()=>{ const t=btn.textContent; btn.textContent='Copied ✓'; setTimeout(()=>{ btn.textContent=t; },1400); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done).catch(()=>{}); }
+  else { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); done(); }catch(e){} ta.remove(); }
+}
+/* suggested follow-ups under a standard answer, anchored to its top serial */
+function _nextChips(a){
+  if(!a || a.type!=='serials' || a.mode!=='serials' || !a.items || !a.items.length || a.list) return '';
+  const s=a.items[0];
+  return `<div class="ans-next"><span class="an-l">Next</span>`
+    + `<button class="serchip sgg" data-sid="${s.id}" data-sq="rehearse">How to rehearse this</button>`
+    + `<button class="serchip sgg" data-sid="${s.id}" data-sq="owner">Who owns it</button>`
+    + `<button class="serchip sgg" data-sid="${s.id}" data-sq="sources">Sources</button></div>`;
+}
+/* focused answers for the follow-up chips — the serial is known, no retrieval */
+function askAbout(sid, kind){
+  const s=ALL_SERIALS.find(x=>x.id===sid); if(!s) return;
+  const label={rehearse:'How do we rehearse this?',owner:'Who owns this change?',sources:'Show the sources'}[kind]||kind;
+  ASKP.thread.push({role:'user',text:label});
+  let html='';
+  if(kind==='rehearse'){
+    html=`<div class="lead"><b>Rehearsal serial</b> — ${s.title}:</div>${_ictBlock(s)}<div class="closing">First-cut design — calibrate to the formation before running it.</div>`;
+  } else if(kind==='owner'){
+    const e=_echCard(sid);
+    html=`<div class="lead"><b>Ownership</b> — ${s.title}:</div><div class="ans-frow" data-open="${sid}"><p>${e.card.o||''} <span class="cite">SER ${sid} · ${e.ech}</span></p><p style="margin-top:6px">${e.card.d||''}</p></div>`;
+  } else {
+    html=`<div class="lead"><b>Sources</b> — ${s.title} (${s.dates||'Jun 2026'}):</div>`
+      + s.sources.map((x,i)=>`<div class="pl-row">• <a href="${x.u}" target="_blank" rel="noopener">[${i+1}] ${x.n}</a></div>`).join('')
+      + `<div class="closing">Open-source reporting — calibrate before adoption.</div>`;
+  }
+  ASKP.thread.push({role:'bot',html,ans:true,q:`${label} (${s.title})`});
+  _renderPaneThread(); _scrollAskPane();
+}
+/* questions the assistant couldn't answer — kept on-device for the editors */
+function _recordMiss(q){
+  try{
+    const key='csi-misses'; const arr=JSON.parse(localStorage.getItem(key)||'[]');
+    const ql=q.toLowerCase(); if(arr.some(x=>x.q.toLowerCase()===ql)) return;
+    arr.push({q, t:new Date().toISOString().slice(0,10)});
+    localStorage.setItem(key, JSON.stringify(arr.slice(-50)));
+  }catch(e){}
+}
+function _getMisses(){ try{ return JSON.parse(localStorage.getItem('csi-misses')||'[]'); }catch(e){ return []; } }
+function renderMisses(){
+  const el=$("#missList"); if(!el) return;
+  const arr=_getMisses();
+  el.innerHTML = arr.length
+    ? arr.slice().reverse().map(x=>`<div class="miss-row"><span>${esc(x.q)}</span><small>${x.t}</small></div>`).join('')
+    : `<div class="miss-row none">None yet — unanswered questions will collect here.</div>`;
+  const c=$("#missCopy"), k=$("#missClear");
+  if(c) c.style.display = arr.length? '':'none';
+  if(k) k.style.display = arr.length? '':'none';
+}
 function renderAskPane(){
   const fe=$("#searchFacets"); if(fe) fe.innerHTML=searchFacetsHTML();
   const ex=$("#askExamples"); if(ex) ex.innerHTML=ASK_EXAMPLES.map(x=>`<button class="serchip ex" data-ask="${esc(x)}">${x}</button>`).join('');
@@ -1166,28 +1253,39 @@ function initAsk(){
 /* The thread scrolls inside the fixed chat container — just keep it pinned to
    the newest message at the bottom. */
 function _scrollAskPane(){ const t=$("#askPaneThread"); if(t) requestAnimationFrame(()=>{ t.scrollTop=t.scrollHeight; }); }
+/* short follow-ups ("what about for artillery?") inherit the previous topic */
+const _FOLLOW = ["what about","how about","and for","what of","same for","and with","what if"];
+function _answerHTML(q, sem, rawQ){
+  const a = answerForAll(q, sem);
+  if(a.type==='none' && _toks(rawQ||q).length) _recordMiss(rawQ||q);
+  return synthAll(a) + _nextChips(a);
+}
 async function askAll(text){
   const q=(text||'').trim(); if(!q) return;
-  state.lastAsk=q;
+  const qlc=' '+q.toLowerCase()+' ';
+  const isFollow = state.lastTopic && _FOLLOW.some(w=>qlc.includes(w));
+  const effQ = isFollow ? state.lastTopic+' '+q : q;
+  if(!isFollow) state.lastTopic = q;
+  state.lastAsk = effQ;
   ASKP.thread.push({role:'user',text:q});
   ASKP.thread.push({role:'bot',html:'<div class="typing"><i></i><i></i><i></i></div>',temp:1});
   _renderPaneThread(); _scrollAskPane();
-  const sem = _embState==='ready' ? await _semScores(q) : null;
+  const sem = _embState==='ready' ? await _semScores(effQ) : null;
   state.lastSem = sem;
   if(!sem) await new Promise(r=>setTimeout(r,220)); // keep the typing beat when answering instantly
   ASKP.thread=ASKP.thread.filter(m=>!m.temp);
-  ASKP.thread.push({role:'bot',html:synthAll(answerForAll(q, sem))});
+  ASKP.thread.push({role:'bot',html:_answerHTML(effQ, sem, q),ans:true,q});
   _renderPaneThread(); _scrollAskPane();
   setTimeout(_scrollAskPane, 320); // re-position once the mobile keyboard has finished closing
 }
 /* facet change re-scopes the most recent answer in place (same query → reuse its embedding scores) */
 function _reanswer(){ if(!state.lastAsk) return;
-  for(let i=ASKP.thread.length-1;i>=0;i--){ const m=ASKP.thread[i]; if(m.role==='bot' && !m.temp && i>0){ m.html=synthAll(answerForAll(state.lastAsk, state.lastSem)); break; } }
+  for(let i=ASKP.thread.length-1;i>=0;i--){ const m=ASKP.thread[i]; if(m.role==='bot' && !m.temp && i>0){ m.html=_answerHTML(state.lastAsk, state.lastSem, m.q||state.lastAsk); break; } }
   _renderPaneThread();
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastSem:null };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastSem:null, lastTopic:null };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -1488,6 +1586,7 @@ function showSection(sec){
   document.querySelectorAll('.nav-item').forEach(n=>n.setAttribute('aria-current', n.dataset.sec===sec?'true':'false'));
   $("#tabsWrap").style.display = sec==="feed"? "block":"none";
   $("#askDock") && $("#askDock").classList.toggle('on', sec==='search');
+  if(sec==='about') renderMisses();
   if(sec!=="feed"){ state.savedOnly=false; updateSavedIcon(); }
   scrollHome();
 }
@@ -1693,6 +1792,10 @@ function init(){
       setTimeout(()=>{ _vvUpd(); _scrollAskPane(); }, 450); });
   }
   $("#pane-search").addEventListener('click', e=>{
+    const cp=e.target.closest('[data-copyans]');
+    if(cp){ e.stopPropagation(); copyAnswer(+cp.dataset.copyans, cp); return; }
+    const sg=e.target.closest('[data-sq]');
+    if(sg){ e.stopPropagation(); askAbout(sg.dataset.sid, sg.dataset.sq); return; }
     const ex=e.target.closest('[data-ask]');
     if(ex){ if(_si){ _si.value=''; _si.blur(); } askAll(ex.dataset.ask); return; }
     const chip=e.target.closest('[data-facet]');
@@ -1718,6 +1821,10 @@ function init(){
   // top bar
   $("#btnBell").onclick = (e)=>{ e.stopPropagation(); togglePop(); };
   $("#btnTheme").onclick = toggleTheme; updateThemeIcon();
+  const _mc=$("#missCopy"); if(_mc) _mc.onclick=()=>{ const arr=_getMisses(); if(!arr.length) return;
+    const text='Ask assistant — unanswered questions (June 2026 edition)\n'+arr.map(x=>`${x.t} — ${x.q}`).join('\n');
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>{ _mc.textContent='Copied ✓'; setTimeout(()=>{ _mc.textContent='Copy list'; },1400); }).catch(()=>{}); } };
+  const _mk=$("#missClear"); if(_mk) _mk.onclick=()=>{ try{ localStorage.removeItem('csi-misses'); }catch(e){} renderMisses(); };
   $("#btnSaved").onclick = ()=>{ if(state.section!=="serials") showSection("serials"); state.savedOnly=!state.savedOnly; updateSavedIcon(); renderSerials(); scrollHome(); };
   $("#logoHome").onclick = ()=>{ state.savedOnly=false; updateSavedIcon(); showSection('feed'); renderFeed(); };
   $("#logoHome").onkeydown = (e)=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); $("#logoHome").click();} };
