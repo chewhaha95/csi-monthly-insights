@@ -28,6 +28,11 @@ jargon, state the actual action, and explain the reasoning behind it.
    costs, percentages, timeframes) that ground the claim.
 5. **One idea per entry.** Headlines are the point itself, not a label — e.g.
    "Deny the supply route rather than destroy it", not "Route denial".
+6. **Third person, always.** No "our", "we", "us", "I". Attribute vulnerabilities
+   and capabilities to formations, functions or systems — "armour reliant on
+   jamming has no answer…", "a casualty response that follows a set pattern…" —
+   and keep recommendations imperative ("disperse the functions", "pre-authorise
+   the conditions"). The register is a detached assessment, not a self-report.
 
 ## Avoid two failure modes
 

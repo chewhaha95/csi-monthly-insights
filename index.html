@@ -1288,8 +1288,8 @@ function packHTML(){
     <h1 class="pack-title">What changed this month ${PACK.titleLine||'for the formation'}.</h1>
     <p class="pack-lede">${F.bluf || PACK.commandLens}</p>
   </div>`;
-  h += frameSectionHTML('opp','Opportunities','Developments we can exploit', F.opportunities);
-  h += frameSectionHTML('vuln','Vulnerabilities','Where we are exposed', F.vulnerabilities);
+  h += frameSectionHTML('opp','Opportunities','Developments to exploit', F.opportunities);
+  h += frameSectionHTML('vuln','Vulnerabilities','Where formations are exposed', F.vulnerabilities);
   h += frameSectionHTML('cap','Capability Development','What to develop — doctrine, training, equipment', F.capdev);
   h += `<div class="feedfoot"><p>This pack distils the <b>Conflict Studies &amp; Insights</b> weekly briefs into a formation-ready monthly learning pack. Open any serial for its full breakdown, decision cards and ICT.</p><a href="${WEEKLY_URL}" target="_blank" rel="noopener">Read the weekly brief →</a></div>`;
   return h;
