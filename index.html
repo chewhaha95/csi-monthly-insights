@@ -876,11 +876,15 @@ let _HAYALL = {}, _TITALL = {};
 function buildIndexAll(){
   _HAYALL = {}; _TITALL = {};
   ALL_SERIALS.forEach(s=>{
-    const a=APP[s.id]||{}, i=ICT[s.id]||{};
-    const at=[a.lead,a.div&&a.div.d,a.div&&a.div.a,a.bde&&a.bde.d,a.bde&&a.bde.a].filter(Boolean).join(" ");
-    const it=[i.fmt,i.set,i.run&&i.run.join(" "),i.dec,i.std].filter(Boolean).join(" ");
+    const a=APP[s.id]||{}, i=ICT[s.id]||{}, l=LEARN[s.id]||{};
+    const dcard=c=>c?[c.d,c.o,c.a,c.t,c.x,c.m].filter(Boolean).join(" "):"";
+    const at=[a.lead,dcard(a.div),dcard(a.bde)].filter(Boolean).join(" ");
+    const it=[i.fmt,i.set,i.run&&i.run.join(" "),i.dec,i.twist,i.std].filter(Boolean).join(" ");
+    const lt=[l.topic,l.why,l.worked,l.next].filter(Boolean).join(" ");
     const fn=s.formations.map(f=>(FORMATIONS_ALL[f]||{n:f}).n).join(" ");
-    _HAYALL[s.id]=(s.id+" "+s.title+" "+(SUMMARY[s.id]||"")+" "+s.theatre+" "+s.blocks.map(b=>b.t).join(" ")+" "+at+" "+it+" "+fn).toLowerCase();
+    _HAYALL[s.id]=(s.id+" "+s.title+" "+(SUMMARY[s.id]||"")+" "+(SIGNAL[s.id]||"")+" "+s.theatre+" "
+      +(s.verdictLabel||s.verdict||"")+" "+(s.dates||"")+" "+(KIND_LABEL[s.kind]||"")+" "
+      +s.blocks.map(b=>b.t).join(" ")+" "+at+" "+it+" "+lt+" "+fn).toLowerCase();
     _TITALL[s.id]=(s.title+" "+(SUMMARY[s.id]||"")).toLowerCase();
   });
 }
@@ -904,6 +908,8 @@ const esc = t => t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':
 const strip = h => h.replace(/<[^>]+>/g,"");
 
 function _toks(q){ return q.toLowerCase().replace(/[^a-z0-9' ]/g," ").split(/\s+/).filter(w=>w.length>2 && !_STOP.has(w)); }
+/* token match tolerant of plurals: "judgements" also matches "judgement" */
+const _hasTok = (hay,t) => hay.includes(t) || (t.length>4 && t.endsWith('s') && hay.includes(t.slice(0,-1)));
 function _detect(qlc){
   const f={outcome:null,theatre:null,formation:null,section:null};
   for(const [k,a] of Object.entries(_SEC)) if(a.some(w=>qlc.includes(w))){f.section=k;break;}
@@ -1018,7 +1024,7 @@ function _rankAll(q,f){
   if(state.fFormation!=='ALL' && !f.formation) pool=pool.filter(s=>s.formations.includes(state.fFormation));
   return pool.map(s=>{
     let sc=0;
-    toks.forEach(t=>{ if(_TITALL[s.id].includes(t)) sc+=3; else if(_HAYALL[s.id].includes(t)) sc+=1; });
+    toks.forEach(t=>{ if(_hasTok(_TITALL[s.id],t)) sc+=3; else if(_hasTok(_HAYALL[s.id],t)) sc+=1; });
     if(f.outcome){ const want=f.outcome==='threat'?(s.verdict==='threat'||s.kind==='capdev'):s.verdict===f.outcome; sc = want? sc+5 : sc*0.12; }
     if(f.theatre){ sc = s.conflict===f.theatre? sc+4 : sc*0.18; }
     if(f.formation){ sc = s.formations.includes(f.formation)? sc+4 : sc*0.4; }
@@ -1065,7 +1071,7 @@ const _pkgLabel = k => { const p=PACKAGES.find(x=>x.k===k); return p?p.label:k; 
 function synthAll(a){
   if(a.type==='none'){
     const th=[...new Set(ALL_SERIALS.map(s=>THEATRE_NAME[s.conflict]||s.theatre))].join(', ');
-    return `<div class="lead">I answer from this edition's <b>14 serials</b> across all four packages. Try a <b>tactic</b> (drones, fibre-optic FPV, double-tap, saturation), an <b>outcome</b> (what worked / what to fix), a <b>theatre</b> (${th}), a <b>formation</b> (Armour, Engineers, Army Int…), or ask <b>what to rehearse</b> or for the <b>bottom line</b>.</div>`;
+    return `<div class="lead">I answer from this edition's <b>14 serials</b>, the four <b>pack overviews</b> and the recent <b>weekly briefs</b>. Try a <b>tactic</b> (drones, fibre-optic FPV, double-tap, saturation), an <b>outcome</b> (what worked / what to fix), a <b>theatre</b> (${th}), a <b>formation</b> (Armour, Engineers, Army Int…), or ask <b>what to rehearse</b> or for the <b>bottom line</b>.</div>`;
   }
   if(a.type==='bluf'){
     return `<div class="lead">Bottom line — <b>${_pkgLabel(a.pkg)}</b>, June 2026:</div><div class="msg-bluf">${PKG[a.pkg].BLUF}</div>`
@@ -1168,7 +1174,48 @@ function _wkHits(q, n){
   if(!toks.length) return [];
   return WKC.chunks.map(c=>{
     const th=c.theatre.toLowerCase(), tx=c.text.toLowerCase();
-    let sc=0; toks.forEach(t=>{ if(th.includes(t)) sc+=2; else if(tx.includes(t)) sc+=1; });
+    let sc=0; toks.forEach(t=>{ if(_hasTok(th,t)) sc+=2; else if(_hasTok(tx,t)) sc+=1; });
+    return {c,sc};
+  }).filter(x=>x.sc>=1).sort((a,b)=>b.sc-a.sc).slice(0,n||3).map(x=>x.c);
+}
+/* ===================== PACKAGE-ANALYSIS CORPUS FOR ASK =====================
+   The pack overviews' own analysis — FRAME opportunities/vulnerabilities/
+   capability development, key judgements, planning inputs, command lens,
+   contests, worked/failed, SOP reviews — as searchable chunks, so Ask covers
+   the whole app, not just the serials. Built once from the static PKG data. */
+let PKC=null;
+const _stripTags = t => String(t||'').replace(/<[^>]+>/g,'');
+function _buildPackCorpus(){
+  PKC=[];
+  const push=(pkg,label,kind,text,id)=>{ const tx=_stripTags(text).replace(/\s+/g,' ').trim();
+    if(tx.length>40) PKC.push({pkg,label,kind,text:tx.slice(0,700),id:id||null}); };
+  PACKAGES.forEach(p=>{
+    const d=PKG[p.k]; if(!d) return; const L=p.label;
+    push(p.k,L,'Bottom line', d.BLUF);
+    const fr=d.FRAME||{};
+    push(p.k,L,'What changed', fr.bluf);
+    (fr.opportunities||[]).forEach(o=>push(p.k,L,'Opportunity', o.t+'. '+o.d, o.id));
+    (fr.vulnerabilities||[]).forEach(o=>push(p.k,L,'Vulnerability', o.t+'. '+o.d, o.id));
+    (fr.capdev||[]).forEach(o=>push(p.k,L,'Capability development', o.t+'. '+o.d, o.id));
+    (d.KEY_JUDGEMENTS||[]).forEach(t=>push(p.k,L,'Key judgement', t));
+    (d.PLANNING||[]).forEach(x=>push(p.k,L,'Planning input', x.b+'. '+x.p));
+    const pk=d.PACK||{};
+    push(p.k,L,'Command lens', pk.commandLens);
+    push(p.k,L,'Brigade BLUF', pk.brigadeBluf);
+    (pk.implications||[]).forEach(x=>push(p.k,L,'Implication — '+(x.ech||''), x.t));
+    (pk.worked||[]).forEach(t=>push(p.k,L,'What worked', t));
+    (pk.failed||[]).forEach(t=>push(p.k,L,'What failed', t));
+    (pk.contests||[]).forEach(c=>push(p.k,L,'Capability contest', (c.cap||'')+'. '+(c.what||'')+' Counter: '+(c.counter||''), c.id));
+    (pk.sopReview||[]).forEach(t=>push(p.k,L,'SOP review', t));
+  });
+}
+function _pkHits(q,n){
+  if(!PKC) _buildPackCorpus();
+  const toks=_expand(_toks(q));
+  if(!toks.length) return [];
+  return PKC.map(c=>{
+    const kd=(c.kind+' '+c.label).toLowerCase(), tx=c.text.toLowerCase();
+    let sc=0; toks.forEach(t=>{ if(_hasTok(kd,t)) sc+=2; else if(_hasTok(tx,t)) sc+=1; });
     return {c,sc};
   }).filter(x=>x.sc>=1).sort((a,b)=>b.sc-a.sc).slice(0,n||3).map(x=>x.c);
 }
@@ -1268,12 +1315,13 @@ function _scrollAskPane(){ const t=$("#askPaneThread"); if(t) requestAnimationFr
    streamed into the thread. ANY failure — offline, 503 (binding not set up),
    timeout, empty stream — falls back to the deterministic on-device answer. */
 function _ctxSerials(items){
-  return items.slice(0,4).map(s=>{ const a=APP[s.id]||{}, t=ICT[s.id]||{};
+  return items.slice(0,4).map(s=>{ const a=APP[s.id]||{}, t=ICT[s.id]||{}, l=LEARN[s.id]||{};
     return { id:s.id, title:s.title, dates:s.dates||'', theatre:s.theatre, verdict:s.verdictLabel||s.verdict,
       summary:SUMMARY[s.id]||'', blocks:(s.blocks||[]).map(b=>b.l+': '+b.t),
       div:a.div?{d:a.div.d,o:a.div.o,t:a.div.t,m:a.div.m}:null,
       bde:a.bde?{d:a.bde.d,o:a.bde.o,t:a.bde.t,m:a.bde.m}:null,
-      ict:{dec:t.dec||'',std:t.std||''} }; });
+      ict:{dec:t.dec||'',std:t.std||''},
+      learn:(l.why||l.next)?{why:l.why||'',next:l.next||''}:null }; });
 }
 /* When retrieval finds nothing (conversational asks like "try again", or a
    topic with no matching serial), send a summary-level digest of the whole
@@ -1291,11 +1339,12 @@ async function _askEnhanced(effQ, rawQ){
     .map(m=>({role:m.role==='user'?'user':'assistant', text: m.role==='user'? m.text : strip(m.html).slice(0,500)}));
   const fmName = state.fFormation!=='ALL' ? (FORMATIONS_ALL[state.fFormation]||{}).n : '';
   const wk = _wkHits(effQ, 3).map(c=>({week:c.week, theatre:c.theatre, text:c.text}));
+  const pk = _pkHits(effQ, 3).map(c=>({pkg:c.label, kind:c.kind, text:c.text}));
   const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(), 9000);
   let res;
   try{
     res = await fetch('/api/ask',{ method:'POST', headers:{'content-type':'application/json'},
-      body:JSON.stringify({question:rawQ, history, serials: scoped?_ctxSerials(a.items):_ctxAllLite(), weekly:wk, formation:fmName}), signal:ctl.signal });
+      body:JSON.stringify({question:rawQ, history, serials: scoped?_ctxSerials(a.items):_ctxAllLite(), pack:pk, weekly:wk, formation:fmName}), signal:ctl.signal });
   }catch(e){ clearTimeout(to); return false; }
   if(!res.ok || !res.body){ clearTimeout(to); return false; }
   ASKP.thread=ASKP.thread.filter(m=>!m.temp);
@@ -1332,9 +1381,18 @@ function _wkAnswer(wk){
     + wk.map(c=>`<div class="wk-hit" data-openwk="${esc(c.url)}" data-wklabel="${esc(c.week)}"><div class="wh-k">${esc(c.week)} · ${esc(c.theatre)}</div><p>${esc(c.text.slice(0,300))}${c.text.length>300?'…':''}</p><span class="wh-open">Open this weekly brief →</span></div>`).join('')
     + `<div class="closing">From the weekly briefs — tap an extract to read the full week.</div>`;
 }
+/* Pack-analysis extracts as answer cards — tap opens the serial (when the
+   extract is tied to one) or that package's pack view. */
+function _pkAnswer(pk){
+  return `<div class="lead">From the pack analysis:</div>`
+    + pk.map(c=>`<div class="wk-hit" ${c.id?`data-open="${esc(c.id)}"`:`data-openpk="${esc(c.pkg)}"`}><div class="wh-k">${esc(c.label)} · ${esc(c.kind)}</div><p>${esc(c.text.slice(0,300))}${c.text.length>300?'…':''}</p><span class="wh-open">${c.id?'Open the serial →':'Open the pack →'}</span></div>`).join('')
+    + `<div class="closing">From the monthly pack overviews — tap an extract for the full context.</div>`;
+}
 function _answerHTML(q, rawQ){
   const a = answerForAll(q);
   if(a.type==='none'){
+    const pk = _pkHits(q, 2);
+    if(pk.length) return _pkAnswer(pk);
     const wk = _wkHits(q, 2);
     if(wk.length) return _wkAnswer(wk);
     if(_toks(rawQ||q).length) _recordMiss(rawQ||q);
@@ -1889,6 +1947,9 @@ function init(){
     if(op){ openDetail(op.dataset.open); return; }
     const wk=e.target.closest('[data-openwk]');
     if(wk){ state.weekOpen=true; state.weekUrl=wk.dataset.openwk; state.weekLabel=wk.dataset.wklabel;
+      buildTabs(); showSection('feed'); renderFeed(); scrollHome(); return; }
+    const pkb=e.target.closest('[data-openpk]');
+    if(pkb){ state.weekOpen=false; state.tab=pkb.dataset.openpk; loadPackage(state.tab);
       buildTabs(); showSection('feed'); renderFeed(); scrollHome(); return; }
   });
 
