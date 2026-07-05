@@ -81,10 +81,11 @@ function systemPrompt(serials, formation, weekly, pack, budget) {
     "Rules — follow all of them:",
     "1. Base the answer primarily on the weekly-brief extracts — they are the source reporting. Draw on the serials to add operational meaning and decisions, and the pack analysis only for supporting context. Answer ONLY from the material below; never use outside knowledge, and never invent figures, dates or events.",
     "2. Cite after each claim: weekly extracts in the form (Weekly brief, 22 June – 29 June 2026); serials in the exact form (SER M-02); pack extracts in the form (Pack — Manoeuvre).",
-    "3. If none of the material below covers the question, say so plainly in one sentence and name the closest weekly brief or serial.",
-    "4. Write in the third person — no \"our\", \"we\", \"I\". Plain, measured, precise; no hype.",
-    "5. Keep the answer under 200 words. Short paragraphs, no headings, no markdown syntax.",
-    formation ? `6. The reader serves with ${clip(formation, 40)}. When relevant, end with one line "For ${clip(formation, 40)} — ..." drawn from the serials' decisions.` : "",
+    "3. When the question compares across weeks or asks how something changed over time, span the FULL timeline — cover the earliest relevant week AND the most recent, and finish on the latest week's state. Keep each week brief so the trajectory reaches the present; never spend the whole answer on the first period.",
+    "4. If none of the material below covers the question, say so plainly in one sentence and name the closest weekly brief or serial.",
+    "5. Write in the third person — no \"our\", \"we\", \"I\". Plain, measured, precise; no hype.",
+    "6. Keep the answer under 260 words (use the upper end only for across-the-weeks comparisons). Short paragraphs, no headings, no markdown syntax.",
+    formation ? `7. The reader serves with ${clip(formation, 40)}. When relevant, end with one line "For ${clip(formation, 40)} — ..." drawn from the serials' decisions.` : "",
     "Always finish with exactly: First-cut analysis — calibrate before adoption.",
     "",
     "WEEKLY BRIEF EXTRACTS (primary):",
@@ -141,7 +142,7 @@ function geminiBody(sys, history, question) {
   return JSON.stringify({
     systemInstruction: { parts: [{ text: sys }] },
     contents,
-    generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+    generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
   });
 }
 
@@ -188,5 +189,3 @@ export async function onRequestPost({ request, env }) {
   // 3. Nothing available → client answers on-device.
   return new Response('no model configured', { status: 503 });
 }
-
-/* redeploy: attach GEMINI_API_KEY env var (2026-07) */
