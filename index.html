@@ -314,9 +314,6 @@ a{color:inherit}
 .searchbar input:focus{border-color:var(--red)}
 .ask-status{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--text-3);padding:0 16px;min-height:0}
 .ask-status:not(:empty){padding:0 16px 10px}
-.ask-status.loading{color:var(--steel)}
-.ask-status.loading::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px;animation:bl 1s infinite}
-.ask-status.ready::before{content:"● ";color:var(--green)}
 .ask-status.enh{color:var(--steel)}
 .ask-status.enh::before{content:"● "}
 .ask-enh{padding:0 16px 10px}
@@ -1004,11 +1001,9 @@ function _detectAll(qlc){
   f.agg = _AGG.some(w=>qlc.includes(w));
   return f;
 }
-/* Ranking. When the on-device embedding model is loaded, `sem` is a map of
-   id -> cosine similarity and drives the base score (semantic retrieval);
-   otherwise we fall back to keyword + synonym matching. Intent boosts
-   (outcome/theatre/formation) and the facet hard-filters apply either way. */
-function _rankAll(q,f,sem){
+/* Ranking: keyword + synonym matching over title (×3) and full haystack (×1),
+   with intent boosts (outcome/theatre/formation) and the facet hard-filters. */
+function _rankAll(q,f){
   const toks=_expand(_toks(q));
   let pool=ALL_SERIALS.slice();
   if(state.fTheatre!=='ALL') pool=pool.filter(s=>s.conflict===state.fTheatre);
@@ -1016,27 +1011,19 @@ function _rankAll(q,f,sem){
   // a formation named in the question overrides the my-formation facet —
   // otherwise asking about another formation returns nothing
   if(state.fFormation!=='ALL' && !f.formation) pool=pool.filter(s=>s.formations.includes(state.fFormation));
-  const useSem = sem && Object.keys(sem).length;
   return pool.map(s=>{
     let sc=0;
-    if(useSem){ sc = (sem[s.id]||0)*10; toks.forEach(t=>{ if(_TITALL[s.id].includes(t)) sc+=0.6; }); }
-    else { toks.forEach(t=>{ if(_TITALL[s.id].includes(t)) sc+=3; else if(_HAYALL[s.id].includes(t)) sc+=1; }); }
+    toks.forEach(t=>{ if(_TITALL[s.id].includes(t)) sc+=3; else if(_HAYALL[s.id].includes(t)) sc+=1; });
     if(f.outcome){ const want=f.outcome==='threat'?(s.verdict==='threat'||s.kind==='capdev'):s.verdict===f.outcome; sc = want? sc+5 : sc*0.12; }
     if(f.theatre){ sc = s.conflict===f.theatre? sc+4 : sc*0.18; }
     if(f.formation){ sc = s.formations.includes(f.formation)? sc+4 : sc*0.4; }
     return {s,sc};
   }).filter(x=>x.sc>0.5).sort((a,b)=>b.sc-a.sc);
 }
-function answerForAll(q, sem){
+function answerForAll(q){
   const qlc=" "+q.toLowerCase().replace(/[^a-z0-9'\/ ]/g," ")+" ";
   const f=_detectAll(qlc);
-  const scored=_rankAll(q,f,sem);
-  // semantic relevance gate: an off-topic query matches everything weakly, so
-  // if the best similarity is low and there's no explicit intent, treat as none.
-  if(sem && Object.keys(sem).length && !f.outcome && !f.theatre && !f.formation && !f.section){
-    const maxSim = Math.max(0, ...ALL_SERIALS.map(s=> sem[s.id]||0));
-    if(maxSim < 0.25) return {type:'none', f};
-  }
+  const scored=_rankAll(q,f);
   if((f.section==='bluf'||f.section==='planning') && !f.theatre && !f.formation && !f.outcome){
     const pkg = scored.length? PKG_OF[scored[0].s.id] : state.tab;
     return {type:f.section, pkg, f, items:scored.slice(0,3).map(x=>x.s)};
@@ -1130,55 +1117,9 @@ function synthAll(a){
     + `<div class="closing">Tap any serial to open the full breakdown.</div>`;
 }
 
-/* ===================== ON-DEVICE SEMANTIC RETRIEVAL =====================
-   Optional local RAG: a small embedding model (transformers.js all-MiniLM-L6-v2,
-   ~25MB, cached by the browser for offline use) runs entirely on-device. It
-   embeds each serial once, then ranks by cosine similarity to the question so the
-   assistant matches on meaning, not just keywords. Loading is lazy (first time the
-   Ask pane opens) and best-effort — any failure (offline first load, unsupported
-   browser) falls back silently to the keyword + synonym engine. Nothing leaves
-   the device. */
-const EMB_MODEL = 'Xenova/all-MiniLM-L6-v2';
-const EMB_LIB = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
-let _EMB=null, _SERVEC=null, _embState='off'; // off | loading | ready | failed
-function _serialText(s){
-  const a=APP[s.id]||{}, i=ICT[s.id]||{};
-  return [s.title, SUMMARY[s.id]||'', s.theatre, (s.blocks||[]).map(b=>b.t).join(' '),
-    a.lead||'', (a.div&&a.div.d)||'', (a.bde&&a.bde.d)||'', i.dec||'',
-    (s.formations||[]).map(f=>(FORMATIONS_ALL[f]||{n:f}).n).join(' ')].join('. ');
-}
-const _cos = (a,b)=>{ let d=0; for(let k=0;k<a.length;k++) d+=a[k]*b[k]; return d; }; // vectors are L2-normalised
-async function loadEmbedder(){
-  if(_embState==='loading'||_embState==='ready') return;
-  if(typeof navigator!=='undefined' && navigator.onLine===false){ _embState='failed'; _updateAskStatus(); return; }
-  _embState='loading'; _updateAskStatus();
-  try{
-    const mod = await import(EMB_LIB);
-    mod.env.allowLocalModels=false;
-    const extractor = await mod.pipeline('feature-extraction', EMB_MODEL, {quantized:true});
-    const vecs={};
-    for(const s of ALL_SERIALS){
-      const out = await extractor(_serialText(s), {pooling:'mean', normalize:true});
-      vecs[s.id]=Array.from(out.data);
-    }
-    _EMB=extractor; _SERVEC=vecs; _embState='ready';
-  }catch(e){ _embState='failed'; }
-  _updateAskStatus();
-}
-async function _semScores(q){
-  if(_embState!=='ready' || !_EMB || !_SERVEC) return null;
-  try{
-    const out = await _EMB(q, {pooling:'mean', normalize:true});
-    const v = Array.from(out.data), m={};
-    for(const s of ALL_SERIALS) m[s.id] = _cos(v, _SERVEC[s.id]);
-    return m;
-  }catch(e){ return null; }
-}
 function _updateAskStatus(){
   const el=$("#askStatus"); if(!el) return;
   if(state.enhanced){ el.className='ask-status enh'; el.textContent='Enhanced answers on · online model — questions leave this device'; }
-  else if(_embState==='loading'){ el.className='ask-status loading'; el.textContent='Loading on-device semantic model…'; }
-  else if(_embState==='ready'){ el.className='ask-status ready'; el.textContent='On-device semantic search · nothing leaves your device'; }
   else { el.className='ask-status'; el.textContent='On-device answers · nothing leaves your device'; }
 }
 
@@ -1260,7 +1201,6 @@ function initAsk(){
   renderAskPane();
   _updateAskStatus();
   _scrollAskPane(); // re-render resets the thread's scroll; pin back to the newest message
-  loadEmbedder(); // lazy, best-effort; falls back to keyword search if it can't load
 }
 /* The thread scrolls inside the fixed chat container — just keep it pinned to
    the newest message at the bottom. */
@@ -1288,8 +1228,8 @@ function _ctxAllLite(){
     verdict:s.verdictLabel||s.verdict, summary:SUMMARY[s.id]||'' }));
 }
 const _linkifySer = t => esc(t).replace(/\(?\bSER\s+([A-Z]{1,3}-\d{2})\)?/g,'<span class="cite" data-open="$1">SER $1</span>');
-async function _askEnhanced(effQ, rawQ, sem){
-  const a = answerForAll(effQ, sem);
+async function _askEnhanced(effQ, rawQ){
+  const a = answerForAll(effQ);
   const scoped = !!(a.items && a.items.length);
   const history = ASKP.thread.filter(m=>!m.temp && (m.role==='user' || m.ans)).slice(-5,-1)
     .map(m=>({role:m.role==='user'?'user':'assistant', text: m.role==='user'? m.text : strip(m.html).slice(0,500)}));
@@ -1329,8 +1269,8 @@ async function _askEnhanced(effQ, rawQ, sem){
 
 /* short follow-ups ("what about for artillery?") inherit the previous topic */
 const _FOLLOW = ["what about","how about","and for","what of","same for","and with","what if"];
-function _answerHTML(q, sem, rawQ){
-  const a = answerForAll(q, sem);
+function _answerHTML(q, rawQ){
+  const a = answerForAll(q);
   if(a.type==='none' && _toks(rawQ||q).length) _recordMiss(rawQ||q);
   return synthAll(a) + _nextChips(a);
 }
@@ -1344,26 +1284,24 @@ async function askAll(text){
   ASKP.thread.push({role:'user',text:q});
   ASKP.thread.push({role:'bot',html:'<div class="typing"><i></i><i></i><i></i></div>',temp:1});
   _renderPaneThread(); _scrollAskPane();
-  const sem = _embState==='ready' ? await _semScores(effQ) : null;
-  state.lastSem = sem;
   if(state.enhanced && navigator.onLine!==false){
-    const ok = await _askEnhanced(effQ, q, sem).catch(()=>false);
+    const ok = await _askEnhanced(effQ, q).catch(()=>false);
     if(ok){ setTimeout(_scrollAskPane, 320); return; }
   }
-  if(!sem) await new Promise(r=>setTimeout(r,220)); // keep the typing beat when answering instantly
+  await new Promise(r=>setTimeout(r,220)); // keep the typing beat when answering instantly
   ASKP.thread=ASKP.thread.filter(m=>!m.temp);
-  ASKP.thread.push({role:'bot',html:_answerHTML(effQ, sem, q),ans:true,q});
+  ASKP.thread.push({role:'bot',html:_answerHTML(effQ, q),ans:true,q});
   _renderPaneThread(); _scrollAskPane();
   setTimeout(_scrollAskPane, 320); // re-position once the mobile keyboard has finished closing
 }
-/* facet change re-scopes the most recent answer in place (same query → reuse its embedding scores) */
+/* facet change re-scopes the most recent answer in place */
 function _reanswer(){ if(!state.lastAsk) return;
-  for(let i=ASKP.thread.length-1;i>=0;i--){ const m=ASKP.thread[i]; if(m.role==='bot' && !m.temp && i>0){ m.html=_answerHTML(state.lastAsk, state.lastSem, m.q||state.lastAsk); break; } }
+  for(let i=ASKP.thread.length-1;i>=0;i--){ const m=ASKP.thread[i]; if(m.role==='bot' && !m.temp && i>0){ m.html=_answerHTML(state.lastAsk, m.q||state.lastAsk); break; } }
   _renderPaneThread();
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastSem:null, lastTopic:null, enhanced:true };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastTopic:null, enhanced:true };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
