@@ -317,10 +317,6 @@ a{color:inherit}
 .searchbar input{width:100%;font-family:var(--body);font-size:15px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;outline:none;-webkit-appearance:none}
 .searchbar input::placeholder{color:var(--text-3)}
 .searchbar input:focus{border-color:var(--red)}
-.ask-status{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--text-3);padding:0 16px;min-height:0}
-.ask-status:not(:empty){padding:0 16px 10px}
-.ask-status.enh{color:var(--steel)}
-.ask-status.enh::before{content:"● "}
 .ask-enh{padding:0 16px 10px}
 .ask-enh label{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);cursor:pointer}
 .ask-enh input{accent-color:var(--red);width:14px;height:14px;margin:0;flex:0 0 auto}
@@ -332,7 +328,7 @@ a{color:inherit}
    pinned at its bottom. The app shell tracks the visual viewport (--vvb), so
    when the keyboard opens the whole shell — input included — rises above it. */
 #pane-search.on{display:flex;flex-direction:column;position:absolute;inset:0;background:var(--bg);z-index:40;overflow:hidden}
-#pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>#askStatus,#pane-search>.ask-enh,#pane-search>#askExamples{flex:0 0 auto}
+#pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>.ask-enh,#pane-search>#askExamples{flex:0 0 auto}
 #pane-search>.theatre-sub{padding-left:18px;padding-right:18px}
 .ask-pane-thread{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:16px;padding:10px 16px 12px}
 .ask-pane-thread>*:first-child{margin-top:auto}
@@ -350,7 +346,7 @@ a{color:inherit}
 .app.kbd .bottomnav{display:none}
 /* while typing the pane is only as tall as the space above the keyboard —
    collapse the header rows so the conversation and the input keep it all */
-.app.kbd #pane-search>.section-title,.app.kbd #pane-search>.theatre-sub,.app.kbd #pane-search>#askStatus,.app.kbd #pane-search>.ask-enh,.app.kbd #pane-search>#askExamples{display:none}
+.app.kbd #pane-search>.section-title,.app.kbd #pane-search>.theatre-sub,.app.kbd #pane-search>.ask-enh,.app.kbd #pane-search>#askExamples{display:none}
 .ask-pane-thread .msg.user{align-self:flex-end;max-width:85%;background:var(--red);color:#fff;font-size:14px;line-height:1.4;padding:9px 13px;border-radius:14px 14px 4px 14px}
 .ask-pane-thread .ans-prose{font-size:14px;line-height:1.6;color:var(--ink);margin:8px 0 2px}
 .ask-pane-thread .cite{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--red);white-space:nowrap;vertical-align:1px}
@@ -752,7 +748,6 @@ a{color:inherit}
     <div class="pane" id="pane-search" style="padding:0">
       <h1 class="section-title" style="font-size:28px;padding:18px 16px 2px">Ask the digest</h1>
       <div class="theatre-sub" style="padding-bottom:10px">Ask in plain English — I answer from June's 14 serials and the recent weekly briefs.</div>
-      <div id="askStatus" class="ask-status"></div>
       <div class="ask-enh"><label><input type="checkbox" id="enhToggle"><span>Enhanced answers · online model — questions leave this device</span></label></div>
       <div id="askExamples" class="ask-examples"></div>
       <div id="askPaneThread" class="ask-pane-thread"></div>
@@ -1216,11 +1211,6 @@ function _pkHits(q,n){
     return {c,sc};
   }).filter(x=>x.sc>=1).sort((a,b)=>b.sc-a.sc).slice(0,n||3).map(x=>x.c);
 }
-function _updateAskStatus(){
-  const el=$("#askStatus"); if(!el) return;
-  if(state.enhanced){ el.className='ask-status enh'; el.textContent='Enhanced answers on · online model — questions leave this device'; }
-  else { el.className='ask-status'; el.textContent='On-device answers · nothing leaves your device'; }
-}
 
 /* ----- Ask pane thread ----- */
 const ASK_EXAMPLES = ["How do we counter fibre-optic drones?","Who owns the casualty-evacuation change?","What should engineers rehearse?","List all threats this month"];
@@ -1297,7 +1287,6 @@ function initAsk(){
   if(!ASKP.seeded){ ASKP.seeded=true;
     ASKP.thread.push({role:'bot', html:`<div class="lead">Ask in plain English — I answer from June's <b>14 serials</b> and the recent <b>weekly briefs</b>, citing each one. Tap an example, or type your own.</div>`}); }
   renderAskPane();
-  _updateAskStatus();
   _scrollAskPane(); // re-render resets the thread's scroll; pin back to the newest message
   loadWkCorpus(); // lazy, best-effort; Ask stays serial-only if it can't load
 }
@@ -1948,7 +1937,7 @@ function init(){
   /* Enhanced answers default ON; only an explicit opt-out ('0') turns it off. */
   try{ state.enhanced = localStorage.getItem('csi-enhanced')!=='0'; }catch(e){}
   const _et=$("#enhToggle"); if(_et){ _et.checked=state.enhanced;
-    _et.addEventListener('change', ()=>{ state.enhanced=_et.checked; try{ localStorage.setItem('csi-enhanced', _et.checked?'1':'0'); }catch(e){} _updateAskStatus(); }); }
+    _et.addEventListener('change', ()=>{ state.enhanced=_et.checked; try{ localStorage.setItem('csi-enhanced', _et.checked?'1':'0'); }catch(e){} }); }
   $("#btnSaved").onclick = ()=>{ if(state.section!=="serials") showSection("serials"); state.savedOnly=!state.savedOnly; updateSavedIcon(); renderSerials(); scrollHome(); };
   $("#logoHome").onclick = ()=>{ state.savedOnly=false; updateSavedIcon(); showSection('feed'); renderFeed(); };
   $("#logoHome").onkeydown = (e)=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); $("#logoHome").click();} };
