@@ -1,23 +1,29 @@
-/* Conflict Studies & Insights — enhanced-answer endpoint (Cloudflare Pages
-   Function, Workers AI).
+/* Conflict Studies & Insights — Ask endpoint (Cloudflare Pages Function).
 
-   The client does the retrieval on-device and sends the matching serials as
-   context; this function only turns them into a natural-language answer. It
-   stores and logs nothing. Requires an AI binding named "AI" on the Pages
-   project (dashboard → Settings → Functions → Bindings); until that binding
-   exists it returns 503 and the app answers on-device instead.
+   The client does the retrieval on-device and posts the corpus as context;
+   this function turns it into a grounded natural-language answer. It stores
+   and logs nothing.
 
-   Note: Pages bindings only attach to deployments created AFTER the binding
-   is added — adding it in the dashboard requires one redeploy to take
-   effect (this commit exists to trigger that redeploy). */
+   Model chain (first available wins):
+     1. Google Gemini 2.5 Flash (full-context) — needs a GEMINI_API_KEY
+        secret (dashboard → Settings → Environment variables, encrypted).
+        The whole corpus fits its 1M-token window, so the model reasons over
+        everything, not just the top matches.
+     2. Cloudflare Workers AI (Llama 3.3 70B) — needs an "AI" binding. Small
+        window, so it gets a relevance-trimmed slice of the same context.
+     3. Neither configured / both error → 503, and the app answers on-device.
 
-const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-// The weekly briefs are the primary evidence base; the serials are the
-// monthly distillation layered on top; pack analysis is the thinnest slice.
-// Budget the context in that order of priority.
-const WK_BUDGET = 9000;   // weekly briefs — primary
-const SER_BUDGET = 7000;  // serials — secondary
-const PK_BUDGET = 2500;   // pack analysis — supporting
+   Note (Gemini free tier): prompts on the free tier may be used by Google to
+   improve their products — hence the app's "non-classified questions only"
+   disclaimer. Workers AI does not train on inputs. */
+
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const WORKERS_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+
+// Context budgets (chars). Weekly briefs are the primary source, serials the
+// monthly distillation, pack analysis supporting.
+const FULL = { wk: 220000, ser: 60000, pk: 90000 };   // Gemini — effectively the whole corpus
+const SMALL = { wk: 9000, ser: 7000, pk: 2500 };       // Workers AI — small window
 
 const clip = (v, n) => String(v == null ? '' : v).slice(0, n);
 
@@ -49,37 +55,35 @@ function serialBlock(s) {
   return lines.join('\n') + '\n\n';
 }
 
-function systemPrompt(serials, formation, weekly, pack) {
-  // Weekly briefs first and largest — the primary reporting the answer rests on.
+function systemPrompt(serials, formation, weekly, pack, budget) {
   let wctx = '';
   for (const w of weekly) {
     const block = `[Weekly brief, ${clip(w.week, 60)} · ${clip(w.theatre, 80)}] ${clip(w.text, 700)}\n\n`;
-    if (wctx.length + block.length > WK_BUDGET) break;
+    if (wctx.length + block.length > budget.wk) break;
     wctx += block;
   }
-  // Serials second — the monthly distillation that adds the formation "so what".
   let ctx = '';
   for (const s of serials) {
     const block = serialBlock(s);
-    if (ctx.length + block.length > SER_BUDGET) break;
+    if (ctx.length + block.length > budget.ser) break;
     ctx += block;
   }
-  // Pack analysis — supporting context only.
   let pctx = '';
   for (const p of pack) {
     const block = `[Pack — ${clip(p.pkg, 40)} · ${clip(p.kind, 40)}] ${clip(p.text, 700)}\n\n`;
-    if (pctx.length + block.length > PK_BUDGET) break;
+    if (pctx.length + block.length > budget.pk) break;
     pctx += block;
   }
   return [
     "You are the duty analyst for the Conflict Studies & Insights digest, answering a formation staff officer.",
-    "The material below has three layers, in priority order: the WEEKLY BRIEFS are the primary reporting (what happened, week by week); the SERIALS are the monthly distillation of those briefs (the formation-level 'so what' and decisions); the PACK ANALYSIS is supporting synthesis.",
+    "The material below has three layers, in priority order: the WEEKLY BRIEFS are the primary reporting (what happened, week by week, across the whole archive); the SERIALS are the monthly distillation of those briefs (the formation-level 'so what' and decisions); the PACK ANALYSIS is supporting synthesis.",
+    "Think carefully across the whole corpus before answering — compare weeks, aggregate across theatres, and reason about trends, not just the single closest extract.",
     "Rules — follow all of them:",
-    "1. Base the answer primarily on the weekly-brief extracts — they are the source reporting. Draw on the serials to add the operational meaning and the decisions, and the pack analysis only for supporting context. Answer ONLY from the material below; never use outside knowledge, and never invent figures, dates or events.",
+    "1. Base the answer primarily on the weekly-brief extracts — they are the source reporting. Draw on the serials to add operational meaning and decisions, and the pack analysis only for supporting context. Answer ONLY from the material below; never use outside knowledge, and never invent figures, dates or events.",
     "2. Cite after each claim: weekly extracts in the form (Weekly brief, 22 June – 29 June 2026); serials in the exact form (SER M-02); pack extracts in the form (Pack — Manoeuvre).",
     "3. If none of the material below covers the question, say so plainly in one sentence and name the closest weekly brief or serial.",
     "4. Write in the third person — no \"our\", \"we\", \"I\". Plain, measured, precise; no hype.",
-    "5. Keep the answer under 180 words. Short paragraphs, no headings, no markdown syntax.",
+    "5. Keep the answer under 200 words. Short paragraphs, no headings, no markdown syntax.",
     formation ? `6. The reader serves with ${clip(formation, 40)}. When relevant, end with one line "For ${clip(formation, 40)} — ..." drawn from the serials' decisions.` : "",
     "Always finish with exactly: First-cut analysis — calibrate before adoption.",
     "",
@@ -90,40 +94,97 @@ function systemPrompt(serials, formation, weekly, pack) {
   ].filter(Boolean).join('\n');
 }
 
-export async function onRequestPost({ request, env }) {
-  if (!env.AI) return new Response('AI binding not configured', { status: 503 });
+const sseHeaders = { 'content-type': 'text/event-stream', 'cache-control': 'no-store' };
 
+/* Transform Gemini's SSE (candidates[].content.parts[].text) into the client's
+   expected {"response": "<token>"} line format, so the browser parser is
+   model-agnostic. */
+function geminiToClientStream(geminiBody) {
+  const reader = geminiBody.getReader();
+  const dec = new TextDecoder();
+  const enc = new TextEncoder();
+  let buf = '';
+  return new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) {
+        controller.enqueue(enc.encode('data: [DONE]\n\n'));
+        controller.close();
+        return;
+      }
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        const s = line.trim();
+        if (!s.startsWith('data:')) continue;
+        const d = s.slice(5).trim();
+        if (!d || d === '[DONE]') continue;
+        try {
+          const j = JSON.parse(d);
+          const parts = j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts;
+          const t = Array.isArray(parts) ? parts.map(p => p.text || '').join('') : '';
+          if (t) controller.enqueue(enc.encode('data: ' + JSON.stringify({ response: t }) + '\n\n'));
+        } catch (e) { /* skip partial/non-JSON keepalive lines */ }
+      }
+    },
+    cancel() { try { reader.cancel(); } catch (e) {} },
+  });
+}
+
+function geminiBody(sys, history, question) {
+  const contents = [];
+  for (const m of history) contents.push({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] });
+  // Gemini requires the conversation to start with a user turn.
+  while (contents.length && contents[0].role !== 'user') contents.shift();
+  contents.push({ role: 'user', parts: [{ text: question }] });
+  return JSON.stringify({
+    systemInstruction: { parts: [{ text: sys }] },
+    contents,
+    generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+  });
+}
+
+export async function onRequestPost({ request, env }) {
   let body;
   try { body = await request.json(); } catch (e) { return new Response('bad request', { status: 400 }); }
 
   const question = clip(body.question, 500).trim();
   if (!question) return new Response('bad request', { status: 400 });
 
-  /* Up to 14 = the whole edition in summary-only form (the client's fallback
-     when retrieval finds no match); MAX_CONTEXT_CHARS stays the hard cap. */
   const serials = Array.isArray(body.serials) ? body.serials.slice(0, 14) : [];
-  const weekly = (Array.isArray(body.weekly) ? body.weekly.slice(0, 8) : [])
+  const weekly = (Array.isArray(body.weekly) ? body.weekly.slice(0, 140) : [])
     .map(w => ({ week: clip(w.week, 60), theatre: clip(w.theatre, 80), text: clip(w.text, 700) }))
     .filter(w => w.text);
-  const pack = (Array.isArray(body.pack) ? body.pack.slice(0, 3) : [])
+  const pack = (Array.isArray(body.pack) ? body.pack.slice(0, 200) : [])
     .map(p => ({ pkg: clip(p.pkg, 40), kind: clip(p.kind, 40), text: clip(p.text, 700) }))
     .filter(p => p.text);
   const history = (Array.isArray(body.history) ? body.history.slice(-4) : [])
     .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: clip(m.text, 600) }))
     .filter(m => m.content);
+  const formation = clip(body.formation, 40);
 
-  const messages = [
-    { role: 'system', content: systemPrompt(serials, clip(body.formation, 40), weekly, pack) },
-    ...history,
-    { role: 'user', content: question },
-  ];
-
-  try {
-    const stream = await env.AI.run(MODEL, { messages, stream: true, max_tokens: 512 });
-    return new Response(stream, {
-      headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-store' },
-    });
-  } catch (e) {
-    return new Response('model unavailable', { status: 503 });
+  // 1. Gemini — full-context reasoning over the whole corpus.
+  if (env.GEMINI_API_KEY) {
+    try {
+      const sys = systemPrompt(serials, formation, weekly, pack, FULL);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${env.GEMINI_API_KEY}`;
+      const gres = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: geminiBody(sys, history, question) });
+      if (gres.ok && gres.body) return new Response(geminiToClientStream(gres.body), { headers: sseHeaders });
+      // non-200 → fall through to Workers AI
+    } catch (e) { /* fall through */ }
   }
+
+  // 2. Workers AI — relevance-trimmed slice for the small window.
+  if (env.AI) {
+    try {
+      const sys = systemPrompt(serials.slice(0, 6), formation, weekly.slice(0, 8), pack.slice(0, 4), SMALL);
+      const messages = [{ role: 'system', content: sys }, ...history, { role: 'user', content: question }];
+      const stream = await env.AI.run(WORKERS_MODEL, { messages, stream: true, max_tokens: 512 });
+      return new Response(stream, { headers: sseHeaders });
+    } catch (e) { /* fall through */ }
+  }
+
+  // 3. Nothing available → client answers on-device.
+  return new Response('no model configured', { status: 503 });
 }
