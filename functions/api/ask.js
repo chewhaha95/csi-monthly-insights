@@ -61,7 +61,9 @@ export async function onRequestPost({ request, env }) {
   const question = clip(body.question, 500).trim();
   if (!question) return new Response('bad request', { status: 400 });
 
-  const serials = Array.isArray(body.serials) ? body.serials.slice(0, 5) : [];
+  /* Up to 14 = the whole edition in summary-only form (the client's fallback
+     when retrieval finds no match); MAX_CONTEXT_CHARS stays the hard cap. */
+  const serials = Array.isArray(body.serials) ? body.serials.slice(0, 14) : [];
   const history = (Array.isArray(body.history) ? body.history.slice(-4) : [])
     .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: clip(m.text, 600) }))
     .filter(m => m.content);
