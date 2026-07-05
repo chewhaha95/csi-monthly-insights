@@ -142,7 +142,10 @@ function geminiBody(sys, history, question) {
   return JSON.stringify({
     systemInstruction: { parts: [{ text: sys }] },
     contents,
-    generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
+    // Bound the model's internal "thinking" so the first token arrives fast.
+    // A small budget keeps enough reasoning for grounded comparison while
+    // cutting several seconds off time-to-first-token; 0 would be fastest.
+    generationConfig: { temperature: 0.3, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 512 } },
   });
 }
 

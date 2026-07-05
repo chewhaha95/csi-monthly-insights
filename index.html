@@ -1359,9 +1359,11 @@ async function _askEnhanced(effQ, rawQ){
   const fmName = state.fFormation!=='ALL' ? (FORMATIONS_ALL[state.fFormation]||{}).n : '';
   // Full-context: send the whole corpus, relevance-ranked (matches first) so a
   // long-context model reasons over everything and a small-window fallback
-  // still gets the top slice. Weekly briefs are the primary layer.
-  const wk = _wkRankedAll(effQ);
-  const pk = _pkRankedAll(effQ);
+  // still gets the top slice. Weekly briefs are the primary layer. Cap each
+  // corpus at a generous top-N (still spans every week) to keep the payload
+  // and Gemini prefill small enough for a fast first token.
+  const wk = _wkRankedAll(effQ).slice(0, 60);
+  const pk = _pkRankedAll(effQ).slice(0, 60);
   const sr = _ctxSerials(_serialsRankedAll(effQ));
   const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(), 20000);
   let res;
