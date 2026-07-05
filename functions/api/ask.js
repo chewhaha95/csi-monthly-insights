@@ -188,3 +188,5 @@ export async function onRequestPost({ request, env }) {
   // 3. Nothing available → client answers on-device.
   return new Response('no model configured', { status: 503 });
 }
+
+/* redeploy: attach GEMINI_API_KEY env var (2026-07) */
