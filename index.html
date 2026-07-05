@@ -184,6 +184,11 @@ a{color:inherit}
 .msg.bot .pl-row{font-size:13.5px;color:var(--ink);margin-top:5px}
 .msg.bot .pl-row b{color:var(--text);font-weight:600}
 .ans-card{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);margin-top:8px;cursor:pointer;transition:border-color .13s}
+.wk-hit{padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);margin-top:8px;cursor:pointer;transition:border-color .13s}
+.wk-hit:hover{border-color:var(--red)}
+.wk-hit .wh-k{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+.wk-hit p{font-family:var(--body);font-size:13px;line-height:1.5;color:var(--text-2);margin:0 0 7px}
+.wk-hit .wh-open{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--text-3)}
 .ans-card:hover{border-color:var(--line-2)}
 .ans-card .vd{flex:0 0 auto;width:8px;height:8px;border-radius:50%;margin-top:5px}
 .vd.success{background:var(--green)}.vd.failure{background:var(--red)}.vd.mixed{background:var(--amber)}.vd.threat{background:var(--steel)}
@@ -746,7 +751,7 @@ a{color:inherit}
     <!-- ASK — on-device assistant -->
     <div class="pane" id="pane-search" style="padding:0">
       <h1 class="section-title" style="font-size:28px;padding:18px 16px 2px">Ask the digest</h1>
-      <div class="theatre-sub" style="padding-bottom:10px">Ask in plain English — I answer from June's 14 serials and cite each one.</div>
+      <div class="theatre-sub" style="padding-bottom:10px">Ask in plain English — I answer from June's 14 serials and the recent weekly briefs.</div>
       <div id="askStatus" class="ask-status"></div>
       <div class="ask-enh"><label><input type="checkbox" id="enhToggle"><span>Enhanced answers · online model — questions leave this device</span></label></div>
       <div id="askExamples" class="ask-examples"></div>
@@ -1117,6 +1122,56 @@ function synthAll(a){
     + `<div class="closing">Tap any serial to open the full breakdown.</div>`;
 }
 
+/* ===================== WEEKLY-BRIEF CORPUS FOR ASK =====================
+   The last four weekly briefs, fetched once in the background when the Ask
+   pane first opens and chunked per theatre item + BLUF. Matching extracts are
+   sent to the online model alongside the serials, and the on-device fallback
+   surfaces them when no monthly serial covers the question. Best-effort:
+   offline or a blocked fetch just leaves Ask serial-only. */
+const WKC = { state:'off', chunks:[] }; // off | loading | ready | failed
+function _wkChunksFrom(htmlString, week){
+  const doc = new DOMParser().parseFromString(htmlString, 'text/html');
+  const out=[], clean=t=>(t||'').replace(/\s+/g,' ').trim();
+  doc.querySelectorAll('.theatre-card').forEach(card=>{
+    const th = clean((card.querySelector('.th-name')||{}).textContent) || 'Theatre';
+    Array.from(card.children).forEach(ch=>{
+      if(ch.classList && ch.classList.contains('th-hdr')) return;
+      Array.from(ch.children).forEach(it=>{
+        const txt = clean(it.textContent);
+        if(txt.length>60) out.push({week:week.label, url:week.url, theatre:th, text:txt.slice(0,650)});
+      });
+    });
+  });
+  doc.querySelectorAll('h2').forEach(h=>{
+    if(/BLUF/i.test(h.textContent||'')){ const d=h.nextElementSibling; const txt=clean(d&&d.textContent);
+      if(txt) out.push({week:week.label, url:week.url, theatre:'BLUF', text:txt.slice(0,900)}); }
+  });
+  return out;
+}
+async function loadWkCorpus(){
+  if(WKC.state==='loading'||WKC.state==='ready') return;
+  if(typeof navigator!=='undefined' && navigator.onLine===false){ WKC.state='failed'; return; }
+  WKC.state='loading';
+  try{
+    const weeks=(await loadWeekList()).slice(0,4);
+    const results=await Promise.all(weeks.map(w=>
+      fetchTimeout(WEEKLY_BASE + w.url, 8000).then(r=>r.ok?r.text():null).then(t=>t?_wkChunksFrom(t,w):[]).catch(()=>[])));
+    WKC.chunks=results.flat();
+    WKC.state=WKC.chunks.length?'ready':'failed';
+  }catch(e){ WKC.state='failed'; }
+}
+/* Top weekly chunks for a question — same expanded-token matching as the
+   serial ranker: any hit qualifies, ranked by hit count (theatre hits ×2). */
+function _wkHits(q, n){
+  if(WKC.state!=='ready') return [];
+  const toks=_expand(_toks(q));
+  if(!toks.length) return [];
+  return WKC.chunks.map(c=>{
+    const th=c.theatre.toLowerCase(), tx=c.text.toLowerCase();
+    let sc=0; toks.forEach(t=>{ if(th.includes(t)) sc+=2; else if(tx.includes(t)) sc+=1; });
+    return {c,sc};
+  }).filter(x=>x.sc>=1).sort((a,b)=>b.sc-a.sc).slice(0,n||3).map(x=>x.c);
+}
 function _updateAskStatus(){
   const el=$("#askStatus"); if(!el) return;
   if(state.enhanced){ el.className='ask-status enh'; el.textContent='Enhanced answers on · online model — questions leave this device'; }
@@ -1197,10 +1252,11 @@ function renderAskPane(){
 }
 function initAsk(){
   if(!ASKP.seeded){ ASKP.seeded=true;
-    ASKP.thread.push({role:'bot', html:`<div class="lead">Ask in plain English — I answer from June's <b>14 serials</b> and cite each one. Tap an example, or type your own.</div>`}); }
+    ASKP.thread.push({role:'bot', html:`<div class="lead">Ask in plain English — I answer from June's <b>14 serials</b> and the recent <b>weekly briefs</b>, citing each one. Tap an example, or type your own.</div>`}); }
   renderAskPane();
   _updateAskStatus();
   _scrollAskPane(); // re-render resets the thread's scroll; pin back to the newest message
+  loadWkCorpus(); // lazy, best-effort; Ask stays serial-only if it can't load
 }
 /* The thread scrolls inside the fixed chat container — just keep it pinned to
    the newest message at the bottom. */
@@ -1234,11 +1290,12 @@ async function _askEnhanced(effQ, rawQ){
   const history = ASKP.thread.filter(m=>!m.temp && (m.role==='user' || m.ans)).slice(-5,-1)
     .map(m=>({role:m.role==='user'?'user':'assistant', text: m.role==='user'? m.text : strip(m.html).slice(0,500)}));
   const fmName = state.fFormation!=='ALL' ? (FORMATIONS_ALL[state.fFormation]||{}).n : '';
+  const wk = _wkHits(effQ, 3).map(c=>({week:c.week, theatre:c.theatre, text:c.text}));
   const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(), 9000);
   let res;
   try{
     res = await fetch('/api/ask',{ method:'POST', headers:{'content-type':'application/json'},
-      body:JSON.stringify({question:rawQ, history, serials: scoped?_ctxSerials(a.items):_ctxAllLite(), formation:fmName}), signal:ctl.signal });
+      body:JSON.stringify({question:rawQ, history, serials: scoped?_ctxSerials(a.items):_ctxAllLite(), weekly:wk, formation:fmName}), signal:ctl.signal });
   }catch(e){ clearTimeout(to); return false; }
   if(!res.ok || !res.body){ clearTimeout(to); return false; }
   ASKP.thread=ASKP.thread.filter(m=>!m.temp);
@@ -1269,9 +1326,19 @@ async function _askEnhanced(effQ, rawQ){
 
 /* short follow-ups ("what about for artillery?") inherit the previous topic */
 const _FOLLOW = ["what about","how about","and for","what of","same for","and with","what if"];
+/* On-device answer card for a weekly-brief extract — tap opens that week */
+function _wkAnswer(wk){
+  return `<div class="lead">The monthly serials don't cover that directly — the weekly briefs do:</div>`
+    + wk.map(c=>`<div class="wk-hit" data-openwk="${esc(c.url)}" data-wklabel="${esc(c.week)}"><div class="wh-k">${esc(c.week)} · ${esc(c.theatre)}</div><p>${esc(c.text.slice(0,300))}${c.text.length>300?'…':''}</p><span class="wh-open">Open this weekly brief →</span></div>`).join('')
+    + `<div class="closing">From the weekly briefs — tap an extract to read the full week.</div>`;
+}
 function _answerHTML(q, rawQ){
   const a = answerForAll(q);
-  if(a.type==='none' && _toks(rawQ||q).length) _recordMiss(rawQ||q);
+  if(a.type==='none'){
+    const wk = _wkHits(q, 2);
+    if(wk.length) return _wkAnswer(wk);
+    if(_toks(rawQ||q).length) _recordMiss(rawQ||q);
+  }
   return synthAll(a) + _nextChips(a);
 }
 async function askAll(text){
@@ -1820,6 +1887,9 @@ function init(){
       $("#searchFacets").innerHTML=searchFacetsHTML(); _reanswer(); return; }
     const op=e.target.closest('[data-open]');
     if(op){ openDetail(op.dataset.open); return; }
+    const wk=e.target.closest('[data-openwk]');
+    if(wk){ state.weekOpen=true; state.weekUrl=wk.dataset.openwk; state.weekLabel=wk.dataset.wklabel;
+      buildTabs(); showSection('feed'); renderFeed(); scrollHome(); return; }
   });
 
   // serials taps (delegation) — same behaviour as the pack

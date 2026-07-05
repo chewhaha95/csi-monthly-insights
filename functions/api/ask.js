@@ -29,19 +29,25 @@ function serialBlock(s) {
   return lines.join('\n') + '\n\n';
 }
 
-function systemPrompt(serials, formation) {
+function systemPrompt(serials, formation, weekly) {
   let ctx = '';
   for (const s of serials) {
     const block = serialBlock(s);
     if (ctx.length + block.length > MAX_CONTEXT_CHARS) break;
     ctx += block;
   }
+  let wctx = '';
+  for (const w of weekly) {
+    const block = `[Weekly brief, ${clip(w.week, 60)} · ${clip(w.theatre, 80)}] ${clip(w.text, 700)}\n\n`;
+    if (ctx.length + wctx.length + block.length > MAX_CONTEXT_CHARS + 2400) break;
+    wctx += block;
+  }
   return [
     "You are the duty analyst for the Conflict Studies & Insights June 2026 operational-learning digest, answering a formation staff officer.",
     "Rules — follow all of them:",
-    "1. Answer ONLY from the serials below. Never use outside knowledge, and never invent figures, dates or events.",
-    "2. Cite the serial after each claim, in the exact form (SER M-02).",
-    "3. If the serials do not cover the question, say so plainly in one sentence and name the closest serial.",
+    "1. Answer ONLY from the serials and weekly-brief extracts below. Never use outside knowledge, and never invent figures, dates or events.",
+    "2. Cite after each claim: serials in the exact form (SER M-02); weekly extracts in the form (Weekly brief, 22 June – 29 June 2026).",
+    "3. If neither the serials nor the weekly extracts cover the question, say so plainly in one sentence and name the closest serial.",
     "4. Write in the third person — no \"our\", \"we\", \"I\". Plain, measured, precise; no hype.",
     "5. Keep the answer under 180 words. Short paragraphs, no headings, no markdown syntax.",
     formation ? `6. The reader serves with ${clip(formation, 40)}. When relevant, end with one line "For ${clip(formation, 40)} — ..." drawn from the serials' decisions.` : "",
@@ -49,6 +55,7 @@ function systemPrompt(serials, formation) {
     "",
     "SERIALS:",
     ctx || "(none provided)",
+    wctx ? "WEEKLY BRIEF EXTRACTS:\n" + wctx : "",
   ].filter(Boolean).join('\n');
 }
 
@@ -64,12 +71,15 @@ export async function onRequestPost({ request, env }) {
   /* Up to 14 = the whole edition in summary-only form (the client's fallback
      when retrieval finds no match); MAX_CONTEXT_CHARS stays the hard cap. */
   const serials = Array.isArray(body.serials) ? body.serials.slice(0, 14) : [];
+  const weekly = (Array.isArray(body.weekly) ? body.weekly.slice(0, 3) : [])
+    .map(w => ({ week: clip(w.week, 60), theatre: clip(w.theatre, 80), text: clip(w.text, 700) }))
+    .filter(w => w.text);
   const history = (Array.isArray(body.history) ? body.history.slice(-4) : [])
     .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: clip(m.text, 600) }))
     .filter(m => m.content);
 
   const messages = [
-    { role: 'system', content: systemPrompt(serials, clip(body.formation, 40)) },
+    { role: 'system', content: systemPrompt(serials, clip(body.formation, 40), weekly) },
     ...history,
     { role: 'user', content: question },
   ];
