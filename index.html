@@ -745,7 +745,7 @@ a{color:inherit}
     <!-- ASK — on-device assistant -->
     <div class="pane" id="pane-search" style="padding:0">
       <h1 class="section-title" style="font-size:28px;padding:18px 16px 2px">Ask the digest</h1>
-      <div class="theatre-sub" style="padding-bottom:10px">Ask in plain English — I answer from June's 14 serials and the weekly-brief archive.</div>
+      <div class="theatre-sub" style="padding-bottom:10px">Ask in plain English — I answer mainly from the weekly-brief archive, distilled through June's 14 serials.</div>
       <div class="ask-note">Online assistant — ask non-classified questions only</div>
       <div id="askExamples" class="ask-examples"></div>
       <div id="askPaneThread" class="ask-pane-thread"></div>
@@ -1061,7 +1061,7 @@ const _pkgLabel = k => { const p=PACKAGES.find(x=>x.k===k); return p?p.label:k; 
 function synthAll(a){
   if(a.type==='none'){
     const th=[...new Set(ALL_SERIALS.map(s=>THEATRE_NAME[s.conflict]||s.theatre))].join(', ');
-    return `<div class="lead">I answer from this edition's <b>14 serials</b>, the four <b>pack overviews</b> and the <b>weekly-brief archive</b>. Try a <b>tactic</b> (drones, fibre-optic FPV, double-tap, saturation), an <b>outcome</b> (what worked / what to fix), a <b>theatre</b> (${th}), a <b>formation</b> (Armour, Engineers, Army Int…), or ask <b>what to rehearse</b> or for the <b>bottom line</b>.</div>`;
+    return `<div class="lead">I answer mainly from the <b>weekly-brief archive</b>, distilled through June's <b>14 serials</b> and <b>pack overviews</b>. Try a <b>tactic</b> (drones, fibre-optic FPV, double-tap, saturation), an <b>outcome</b> (what worked / what to fix), a <b>theatre</b> (${th}), a <b>formation</b> (Armour, Engineers, Army Int…), or ask <b>what to rehearse</b> or for the <b>bottom line</b>.</div>`;
   }
   if(a.type==='bluf'){
     return `<div class="lead">Bottom line — <b>${_pkgLabel(a.pkg)}</b>, June 2026:</div><div class="msg-bluf">${PKG[a.pkg].BLUF}</div>`
@@ -1293,7 +1293,7 @@ function renderAskPane(){
 }
 function initAsk(){
   if(!ASKP.seeded){ ASKP.seeded=true;
-    ASKP.thread.push({role:'bot', html:`<div class="lead">Ask in plain English — I answer from June's <b>14 serials</b> and the <b>weekly-brief archive</b>, citing each one. Tap an example, or type your own.</div>`}); }
+    ASKP.thread.push({role:'bot', html:`<div class="lead">Ask in plain English — I answer mainly from the <b>weekly-brief archive</b>, distilled through June's <b>14 serials</b>, citing each one. Tap an example, or type your own.</div>`}); }
   renderAskPane();
   _scrollAskPane(); // re-render resets the thread's scroll; pin back to the newest message
   loadWkCorpus(); // lazy, best-effort; Ask stays serial-only if it can't load
@@ -1336,7 +1336,7 @@ async function _askEnhanced(effQ, rawQ){
   const history = ASKP.thread.filter(m=>!m.temp && (m.role==='user' || m.ans)).slice(-5,-1)
     .map(m=>({role:m.role==='user'?'user':'assistant', text: m.role==='user'? m.text : strip(m.html).slice(0,500)}));
   const fmName = state.fFormation!=='ALL' ? (FORMATIONS_ALL[state.fFormation]||{}).n : '';
-  const wk = _wkHits(effQ, 6).map(c=>({week:c.week, theatre:c.theatre, text:c.text}));
+  const wk = _wkHits(effQ, 8).map(c=>({week:c.week, theatre:c.theatre, text:c.text}));
   const pk = _pkHits(effQ, 3).map(c=>({pkg:c.label, kind:c.kind, text:c.text}));
   const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(), 9000);
   let res;
@@ -1389,10 +1389,11 @@ function _pkAnswer(pk){
 function _answerHTML(q, rawQ){
   const a = answerForAll(q);
   if(a.type==='none'){
+    // weekly briefs are the primary source — surface them before pack analysis
+    const wk = _wkHits(q, 3);
+    if(wk.length) return _wkAnswer(wk);
     const pk = _pkHits(q, 2);
     if(pk.length) return _pkAnswer(pk);
-    const wk = _wkHits(q, 2);
-    if(wk.length) return _wkAnswer(wk);
     if(_toks(rawQ||q).length) _recordMiss(rawQ||q);
   }
   return synthAll(a) + _nextChips(a);

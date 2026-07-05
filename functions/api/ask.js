@@ -12,9 +12,12 @@
    effect (this commit exists to trigger that redeploy). */
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-// Serials now carry their full record, so give the serial context enough room
-// for ~4 complete serials; pack and weekly extracts extend past this.
-const MAX_CONTEXT_CHARS = 13000;
+// The weekly briefs are the primary evidence base; the serials are the
+// monthly distillation layered on top; pack analysis is the thinnest slice.
+// Budget the context in that order of priority.
+const WK_BUDGET = 9000;   // weekly briefs — primary
+const SER_BUDGET = 7000;  // serials — secondary
+const PK_BUDGET = 2500;   // pack analysis — supporting
 
 const clip = (v, n) => String(v == null ? '' : v).slice(0, n);
 
@@ -47,39 +50,43 @@ function serialBlock(s) {
 }
 
 function systemPrompt(serials, formation, weekly, pack) {
-  let ctx = '';
-  for (const s of serials) {
-    const block = serialBlock(s);
-    if (ctx.length + block.length > MAX_CONTEXT_CHARS) break;
-    ctx += block;
-  }
-  let pctx = '';
-  for (const p of pack) {
-    const block = `[Pack — ${clip(p.pkg, 40)} · ${clip(p.kind, 40)}] ${clip(p.text, 700)}\n\n`;
-    if (ctx.length + pctx.length + block.length > MAX_CONTEXT_CHARS + 2400) break;
-    pctx += block;
-  }
+  // Weekly briefs first and largest — the primary reporting the answer rests on.
   let wctx = '';
   for (const w of weekly) {
     const block = `[Weekly brief, ${clip(w.week, 60)} · ${clip(w.theatre, 80)}] ${clip(w.text, 700)}\n\n`;
-    if (ctx.length + pctx.length + wctx.length + block.length > MAX_CONTEXT_CHARS + 6600) break;
+    if (wctx.length + block.length > WK_BUDGET) break;
     wctx += block;
   }
+  // Serials second — the monthly distillation that adds the formation "so what".
+  let ctx = '';
+  for (const s of serials) {
+    const block = serialBlock(s);
+    if (ctx.length + block.length > SER_BUDGET) break;
+    ctx += block;
+  }
+  // Pack analysis — supporting context only.
+  let pctx = '';
+  for (const p of pack) {
+    const block = `[Pack — ${clip(p.pkg, 40)} · ${clip(p.kind, 40)}] ${clip(p.text, 700)}\n\n`;
+    if (pctx.length + block.length > PK_BUDGET) break;
+    pctx += block;
+  }
   return [
-    "You are the duty analyst for the Conflict Studies & Insights June 2026 operational-learning digest, answering a formation staff officer.",
+    "You are the duty analyst for the Conflict Studies & Insights digest, answering a formation staff officer.",
+    "The material below has three layers, in priority order: the WEEKLY BRIEFS are the primary reporting (what happened, week by week); the SERIALS are the monthly distillation of those briefs (the formation-level 'so what' and decisions); the PACK ANALYSIS is supporting synthesis.",
     "Rules — follow all of them:",
-    "1. Answer ONLY from the serials, pack-analysis extracts and weekly-brief extracts below. Never use outside knowledge, and never invent figures, dates or events.",
-    "2. Cite after each claim: serials in the exact form (SER M-02); pack extracts in the form (Pack — Manoeuvre); weekly extracts in the form (Weekly brief, 22 June – 29 June 2026).",
-    "3. If none of the material below covers the question, say so plainly in one sentence and name the closest serial.",
+    "1. Base the answer primarily on the weekly-brief extracts — they are the source reporting. Draw on the serials to add the operational meaning and the decisions, and the pack analysis only for supporting context. Answer ONLY from the material below; never use outside knowledge, and never invent figures, dates or events.",
+    "2. Cite after each claim: weekly extracts in the form (Weekly brief, 22 June – 29 June 2026); serials in the exact form (SER M-02); pack extracts in the form (Pack — Manoeuvre).",
+    "3. If none of the material below covers the question, say so plainly in one sentence and name the closest weekly brief or serial.",
     "4. Write in the third person — no \"our\", \"we\", \"I\". Plain, measured, precise; no hype.",
     "5. Keep the answer under 180 words. Short paragraphs, no headings, no markdown syntax.",
     formation ? `6. The reader serves with ${clip(formation, 40)}. When relevant, end with one line "For ${clip(formation, 40)} — ..." drawn from the serials' decisions.` : "",
     "Always finish with exactly: First-cut analysis — calibrate before adoption.",
     "",
-    "SERIALS:",
-    ctx || "(none provided)",
-    pctx ? "PACK ANALYSIS EXTRACTS:\n" + pctx : "",
-    wctx ? "WEEKLY BRIEF EXTRACTS:\n" + wctx : "",
+    "WEEKLY BRIEF EXTRACTS (primary):",
+    wctx || "(none provided)",
+    ctx ? "SERIALS (monthly distillation):\n" + ctx : "",
+    pctx ? "PACK ANALYSIS EXTRACTS (supporting):\n" + pctx : "",
   ].filter(Boolean).join('\n');
 }
 
@@ -95,7 +102,7 @@ export async function onRequestPost({ request, env }) {
   /* Up to 14 = the whole edition in summary-only form (the client's fallback
      when retrieval finds no match); MAX_CONTEXT_CHARS stays the hard cap. */
   const serials = Array.isArray(body.serials) ? body.serials.slice(0, 14) : [];
-  const weekly = (Array.isArray(body.weekly) ? body.weekly.slice(0, 6) : [])
+  const weekly = (Array.isArray(body.weekly) ? body.weekly.slice(0, 8) : [])
     .map(w => ({ week: clip(w.week, 60), theatre: clip(w.theatre, 80), text: clip(w.text, 700) }))
     .filter(w => w.text);
   const pack = (Array.isArray(body.pack) ? body.pack.slice(0, 3) : [])
