@@ -332,7 +332,7 @@ a{color:inherit}
    pinned at its bottom. The app shell tracks the visual viewport (--vvb), so
    when the keyboard opens the whole shell — input included — rises above it. */
 #pane-search.on{display:flex;flex-direction:column;position:absolute;inset:0;background:var(--bg);z-index:40;overflow:hidden}
-#pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>#askStatus,#pane-search>.ask-enh,#pane-search>#askExamples,#pane-search>#searchFacets{flex:0 0 auto}
+#pane-search>.section-title,#pane-search>.theatre-sub,#pane-search>#askStatus,#pane-search>.ask-enh,#pane-search>#askExamples{flex:0 0 auto}
 #pane-search>.theatre-sub{padding-left:18px;padding-right:18px}
 .ask-pane-thread{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:16px;padding:10px 16px 12px}
 .ask-pane-thread>*:first-child{margin-top:auto}
@@ -350,7 +350,7 @@ a{color:inherit}
 .app.kbd .bottomnav{display:none}
 /* while typing the pane is only as tall as the space above the keyboard —
    collapse the header rows so the conversation and the input keep it all */
-.app.kbd #pane-search>.section-title,.app.kbd #pane-search>.theatre-sub,.app.kbd #pane-search>#askStatus,.app.kbd #pane-search>.ask-enh,.app.kbd #pane-search>#askExamples,.app.kbd #pane-search>#searchFacets{display:none}
+.app.kbd #pane-search>.section-title,.app.kbd #pane-search>.theatre-sub,.app.kbd #pane-search>#askStatus,.app.kbd #pane-search>.ask-enh,.app.kbd #pane-search>#askExamples{display:none}
 .ask-pane-thread .msg.user{align-self:flex-end;max-width:85%;background:var(--red);color:#fff;font-size:14px;line-height:1.4;padding:9px 13px;border-radius:14px 14px 4px 14px}
 .ask-pane-thread .ans-prose{font-size:14px;line-height:1.6;color:var(--ink);margin:8px 0 2px}
 .ask-pane-thread .cite{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--red);white-space:nowrap;vertical-align:1px}
@@ -755,7 +755,6 @@ a{color:inherit}
       <div id="askStatus" class="ask-status"></div>
       <div class="ask-enh"><label><input type="checkbox" id="enhToggle"><span>Enhanced answers · online model — questions leave this device</span></label></div>
       <div id="askExamples" class="ask-examples"></div>
-      <div id="searchFacets"></div>
       <div id="askPaneThread" class="ask-pane-thread"></div>
       <form id="askDock" class="ask-dock" autocomplete="off">
         <input id="searchInput" type="search" inputmode="search" enterkeyhint="send" autocomplete="off" placeholder="Ask about drones, Sudan, what worked…" aria-label="Ask the digest">
@@ -1017,8 +1016,6 @@ function _detectAll(qlc){
 function _rankAll(q,f){
   const toks=_expand(_toks(q));
   let pool=ALL_SERIALS.slice();
-  if(state.fTheatre!=='ALL') pool=pool.filter(s=>s.conflict===state.fTheatre);
-  if(state.fVerdict!=='ALL') pool=pool.filter(s=>s.verdict===state.fVerdict);
   // a formation named in the question overrides the my-formation facet —
   // otherwise asking about another formation returns nothing
   if(state.fFormation!=='ALL' && !f.formation) pool=pool.filter(s=>s.formations.includes(state.fFormation));
@@ -1293,7 +1290,6 @@ function renderMisses(){
   if(k) k.style.display = arr.length? '':'none';
 }
 function renderAskPane(){
-  const fe=$("#searchFacets"); if(fe) fe.innerHTML=searchFacetsHTML();
   const ex=$("#askExamples"); if(ex) ex.innerHTML=ASK_EXAMPLES.map(x=>`<button class="serchip ex" data-ask="${esc(x)}">${x}</button>`).join('');
   _renderPaneThread();
 }
@@ -1405,7 +1401,6 @@ async function askAll(text){
   const isFollow = state.lastTopic && _FOLLOW.some(w=>qlc.includes(w));
   const effQ = isFollow ? state.lastTopic+' '+q : q;
   if(!isFollow) state.lastTopic = q;
-  state.lastAsk = effQ;
   ASKP.thread.push({role:'user',text:q});
   ASKP.thread.push({role:'bot',html:'<div class="typing"><i></i><i></i><i></i></div>',temp:1});
   _renderPaneThread(); _scrollAskPane();
@@ -1419,14 +1414,9 @@ async function askAll(text){
   _renderPaneThread(); _scrollAskPane();
   setTimeout(_scrollAskPane, 320); // re-position once the mobile keyboard has finished closing
 }
-/* facet change re-scopes the most recent answer in place */
-function _reanswer(){ if(!state.lastAsk) return;
-  for(let i=ASKP.thread.length-1;i>=0;i--){ const m=ASKP.thread[i]; if(m.role==='bot' && !m.temp && i>0){ m.html=_answerHTML(state.lastAsk, m.q||state.lastAsk); break; } }
-  _renderPaneThread();
-}
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fTheatre:"ALL", fVerdict:"ALL", fFormation:"ALL", serialFormation:"ALL", lastAsk:null, lastTopic:null, enhanced:true };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:false, weekUrl:null, weekLabel:null, weekList:null, q:"", fFormation:"ALL", serialFormation:"ALL", lastTopic:null, enhanced:true };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -1548,19 +1538,6 @@ function renderSerials(){
 
 /* ===================== SEARCH / EXPLORE ===================== */
 const VERDICT_FACETS = [{k:"success",l:"Success"},{k:"mixed",l:"Mixed"},{k:"threat",l:"Threat"}];
-function searchFacetsHTML(){
-  const tmap={}; ALL_SERIALS.forEach(s=>{ if(!tmap[s.conflict]) tmap[s.conflict]=s.theatre; });
-  const theatres = Object.keys(tmap).map(c=>({k:c, l:tmap[c]}));
-  const tv = state.fTheatre, vv = state.fVerdict;
-  const tchips = `<span class="facet-lbl">Theatre</span><button class="serchip${tv==='ALL'?' on':''}" data-facet="theatre" data-val="ALL">All</button>`
-    + theatres.map(t=>`<button class="serchip${tv===t.k?' on':''}" data-facet="theatre" data-val="${t.k}">${t.l}</button>`).join('');
-  const vchips = `<span class="facet-lbl">Outcome</span><button class="serchip${vv==='ALL'?' on':''}" data-facet="verdict" data-val="ALL">All</button>`
-    + VERDICT_FACETS.map(v=>`<button class="serchip${vv===v.k?' on':''}" data-facet="verdict" data-val="${v.k}">${v.l}</button>`).join('');
-  const fv = state.fFormation;
-  const fchips = `<span class="facet-lbl">Formation</span><button class="serchip${fv==='ALL'?' on':''}" data-facet="formation" data-val="ALL">All</button>`
-    + Object.keys(FORMATIONS_ALL).map(k=>`<button class="serchip${fv===k?' on':''}" data-facet="formation" data-val="${k}">${FORMATIONS_ALL[k].n}</button>`).join('');
-  return `<div class="facet-row">${tchips}</div><div class="facet-row">${vchips}</div><div class="facet-row">${fchips}</div>`;
-}
 const statusClass = st => { const x=st.toLowerCase(); if(x.includes("action")||x.includes("strain")||x.includes("now")) return "st-now"; if(x.includes("watch")||x.includes("weak")) return "st-watch"; return "st-high"; };
 function secOpen(title, right){ return `<section class="psec"><div class="psec-head"><h2 class="psec-title">${title}</h2><span class="psec-right">${right}</span></div>`; }
 function statCardsHTML(){ return `<div class="statcards">${PACK.stats.map(s=>`<div class="statcard"><div class="sc-k">${s.k}</div><div class="sc-n">${s.n}</div><div class="sc-s">${s.s}</div></div>`).join('')}</div>`; }
@@ -1939,10 +1916,6 @@ function init(){
     if(sg){ e.stopPropagation(); askAbout(sg.dataset.sid, sg.dataset.sq); return; }
     const ex=e.target.closest('[data-ask]');
     if(ex){ if(_si){ _si.value=''; _si.blur(); } askAll(ex.dataset.ask); return; }
-    const chip=e.target.closest('[data-facet]');
-    if(chip){ const fc=chip.dataset.facet;
-      if(fc==='theatre') state.fTheatre=chip.dataset.val; else if(fc==='formation') setMyFormation(chip.dataset.val); else state.fVerdict=chip.dataset.val;
-      $("#searchFacets").innerHTML=searchFacetsHTML(); _reanswer(); return; }
     const op=e.target.closest('[data-open]');
     if(op){ openDetail(op.dataset.open); return; }
     const wk=e.target.closest('[data-openwk]');
