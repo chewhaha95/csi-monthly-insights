@@ -12,20 +12,37 @@
    effect (this commit exists to trigger that redeploy). */
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-const MAX_CONTEXT_CHARS = 8000;
+// Serials now carry their full record, so give the serial context enough room
+// for ~4 complete serials; pack and weekly extracts extend past this.
+const MAX_CONTEXT_CHARS = 13000;
 
 const clip = (v, n) => String(v == null ? '' : v).slice(0, n);
 
+function decisionLine(label, c) {
+  return `${label}: ${clip(c.d, 300)}`
+    + (c.o ? ` Owner: ${clip(c.o, 120)}` : '')
+    + (c.a ? ` Changes: ${clip(c.a, 250)}` : '')
+    + (c.t ? ` Trigger: ${clip(c.t, 200)}` : '')
+    + (c.x ? ` Trade-off: ${clip(c.x, 200)}` : '')
+    + (c.m ? ` Measure: ${clip(c.m, 200)}` : '');
+}
 function serialBlock(s) {
   const lines = [
-    `SER ${clip(s.id, 8)} — ${clip(s.title, 160)}`,
+    `SER ${clip(s.id, 8)} — ${clip(s.title, 160)}${s.kind ? ' (' + clip(s.kind, 30) + ')' : ''}`,
     `Theatre: ${clip(s.theatre, 60)} · Dates: ${clip(s.dates, 40)} · Assessment: ${clip(s.verdict, 30)}`,
     `Summary: ${clip(s.summary, 400)}`,
   ];
+  if (s.signal) lines.push(`Signal: ${clip(s.signal, 300)}`);
   (Array.isArray(s.blocks) ? s.blocks.slice(0, 4) : []).forEach(b => lines.push(clip(b, 700)));
-  if (s.div && s.div.d) lines.push(`Division decision: ${clip(s.div.d, 300)} Owner: ${clip(s.div.o, 120)} Trigger: ${clip(s.div.t, 200)} Measure: ${clip(s.div.m, 200)}`);
-  if (s.bde && s.bde.d) lines.push(`Brigade/unit decision: ${clip(s.bde.d, 300)} Owner: ${clip(s.bde.o, 120)} Trigger: ${clip(s.bde.t, 200)} Measure: ${clip(s.bde.m, 200)}`);
-  if (s.ict && s.ict.dec) lines.push(`Rehearsal focus: ${clip(s.ict.dec, 250)} Standard: ${clip(s.ict.std, 250)}`);
+  if (s.lead) lines.push(`Assessment: ${clip(s.lead, 400)}`);
+  if (s.div && s.div.d) lines.push(decisionLine('Division decision', s.div));
+  if (s.bde && s.bde.d) lines.push(decisionLine('Brigade/unit decision', s.bde));
+  if (s.ict && (s.ict.dec || s.ict.fmt)) {
+    const runs = Array.isArray(s.ict.run) ? s.ict.run.map(r => clip(r, 200)).join(' | ') : '';
+    lines.push(`Rehearsal (${clip(s.ict.fmt, 160)}): setup — ${clip(s.ict.set, 300)}${runs ? ' Steps: ' + clip(runs, 600) : ''}${s.ict.twist ? ' Twist: ' + clip(s.ict.twist, 200) : ''} Decision: ${clip(s.ict.dec, 250)} Standard: ${clip(s.ict.std, 250)}`);
+  }
+  if (s.learn && (s.learn.why || s.learn.next)) lines.push(`Learn more — Why it matters: ${clip(s.learn.why, 300)}${s.learn.worked ? ' What worked: ' + clip(s.learn.worked, 250) : ''}${s.learn.next ? ' What next: ' + clip(s.learn.next, 250) : ''}`);
+  if (Array.isArray(s.sources) && s.sources.length) lines.push(`Sources: ${clip(s.sources.join('; '), 400)}`);
   return lines.join('\n') + '\n\n';
 }
 

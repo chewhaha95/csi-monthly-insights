@@ -1194,10 +1194,12 @@ function _buildPackCorpus(){
     const pk=d.PACK||{};
     push(p.k,L,'Command lens', pk.commandLens);
     push(p.k,L,'Brigade BLUF', pk.brigadeBluf);
+    (pk.divPriorities||[]).forEach(t=>push(p.k,L,'Division priority', t));
     (pk.implications||[]).forEach(x=>push(p.k,L,'Implication — '+(x.ech||''), x.t));
     (pk.worked||[]).forEach(t=>push(p.k,L,'What worked', t));
     (pk.failed||[]).forEach(t=>push(p.k,L,'What failed', t));
-    (pk.contests||[]).forEach(c=>push(p.k,L,'Capability contest', (c.cap||'')+'. '+(c.what||'')+' Counter: '+(c.counter||''), c.id));
+    (pk.contests||[]).forEach(c=>push(p.k,L,'Capability contest', (c.cap||'')+'. '+(c.what||'')+' Counter: '+(c.counter||'')
+      +(c.tempo?' Tempo: '+c.tempo:'')+(c.diffusion?' Where: '+c.diffusion:'')+(c.supersession?' Supersedes: '+c.supersession:''), c.id));
     (pk.sopReview||[]).forEach(t=>push(p.k,L,'SOP review', t));
     (pk.testICT||[]).forEach(t=>push(p.k,L,'Test in ICT', t));
     push(p.k,L,'Month overview', pk.changed);
@@ -1305,14 +1307,19 @@ function _scrollAskPane(){ const t=$("#askPaneThread"); if(t) requestAnimationFr
    this same deployment) and a language model writes the answer, streamed
    into the thread. ANY failure — offline, 503 (binding not set up),
    timeout, empty stream — falls back to the deterministic on-device answer. */
+/* Full record for each matched serial — every authored field, so the model
+   answers from the complete serial, not a slice. The server clips to the
+   context budget. */
 function _ctxSerials(items){
+  const card=c=>c?{d:c.d||'',o:c.o||'',a:c.a||'',t:c.t||'',x:c.x||'',m:c.m||''}:null;
   return items.slice(0,4).map(s=>{ const a=APP[s.id]||{}, t=ICT[s.id]||{}, l=LEARN[s.id]||{};
-    return { id:s.id, title:s.title, dates:s.dates||'', theatre:s.theatre, verdict:s.verdictLabel||s.verdict,
-      summary:SUMMARY[s.id]||'', blocks:(s.blocks||[]).map(b=>b.l+': '+b.t),
-      div:a.div?{d:a.div.d,o:a.div.o,t:a.div.t,m:a.div.m}:null,
-      bde:a.bde?{d:a.bde.d,o:a.bde.o,t:a.bde.t,m:a.bde.m}:null,
-      ict:{dec:t.dec||'',std:t.std||''},
-      learn:(l.why||l.next)?{why:l.why||'',next:l.next||''}:null }; });
+    return { id:s.id, title:s.title, kind:KIND_LABEL[s.kind]||'', dates:s.dates||'', theatre:s.theatre,
+      verdict:s.verdictLabel||s.verdict, summary:SUMMARY[s.id]||'', signal:SIGNAL[s.id]||'',
+      blocks:(s.blocks||[]).map(b=>b.l+': '+b.t),
+      lead:a.lead||'', div:card(a.div), bde:card(a.bde),
+      ict:(t.fmt||t.dec)?{fmt:t.fmt||'',set:t.set||'',run:(t.run||[]),dec:t.dec||'',twist:t.twist||'',std:t.std||''}:null,
+      learn:(l.topic||l.why||l.worked||l.next)?{topic:l.topic||'',status:l.status||'',why:l.why||'',worked:l.worked||'',next:l.next||''}:null,
+      sources:(s.sources||[]).map(x=>x.n).filter(Boolean) }; });
 }
 /* When retrieval finds nothing (conversational asks like "try again", or a
    topic with no matching serial), send a summary-level digest of the whole
