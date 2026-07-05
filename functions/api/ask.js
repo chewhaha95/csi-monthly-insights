@@ -29,25 +29,31 @@ function serialBlock(s) {
   return lines.join('\n') + '\n\n';
 }
 
-function systemPrompt(serials, formation, weekly) {
+function systemPrompt(serials, formation, weekly, pack) {
   let ctx = '';
   for (const s of serials) {
     const block = serialBlock(s);
     if (ctx.length + block.length > MAX_CONTEXT_CHARS) break;
     ctx += block;
   }
+  let pctx = '';
+  for (const p of pack) {
+    const block = `[Pack — ${clip(p.pkg, 40)} · ${clip(p.kind, 40)}] ${clip(p.text, 700)}\n\n`;
+    if (ctx.length + pctx.length + block.length > MAX_CONTEXT_CHARS + 2400) break;
+    pctx += block;
+  }
   let wctx = '';
   for (const w of weekly) {
     const block = `[Weekly brief, ${clip(w.week, 60)} · ${clip(w.theatre, 80)}] ${clip(w.text, 700)}\n\n`;
-    if (ctx.length + wctx.length + block.length > MAX_CONTEXT_CHARS + 2400) break;
+    if (ctx.length + pctx.length + wctx.length + block.length > MAX_CONTEXT_CHARS + 4800) break;
     wctx += block;
   }
   return [
     "You are the duty analyst for the Conflict Studies & Insights June 2026 operational-learning digest, answering a formation staff officer.",
     "Rules — follow all of them:",
-    "1. Answer ONLY from the serials and weekly-brief extracts below. Never use outside knowledge, and never invent figures, dates or events.",
-    "2. Cite after each claim: serials in the exact form (SER M-02); weekly extracts in the form (Weekly brief, 22 June – 29 June 2026).",
-    "3. If neither the serials nor the weekly extracts cover the question, say so plainly in one sentence and name the closest serial.",
+    "1. Answer ONLY from the serials, pack-analysis extracts and weekly-brief extracts below. Never use outside knowledge, and never invent figures, dates or events.",
+    "2. Cite after each claim: serials in the exact form (SER M-02); pack extracts in the form (Pack — Manoeuvre); weekly extracts in the form (Weekly brief, 22 June – 29 June 2026).",
+    "3. If none of the material below covers the question, say so plainly in one sentence and name the closest serial.",
     "4. Write in the third person — no \"our\", \"we\", \"I\". Plain, measured, precise; no hype.",
     "5. Keep the answer under 180 words. Short paragraphs, no headings, no markdown syntax.",
     formation ? `6. The reader serves with ${clip(formation, 40)}. When relevant, end with one line "For ${clip(formation, 40)} — ..." drawn from the serials' decisions.` : "",
@@ -55,6 +61,7 @@ function systemPrompt(serials, formation, weekly) {
     "",
     "SERIALS:",
     ctx || "(none provided)",
+    pctx ? "PACK ANALYSIS EXTRACTS:\n" + pctx : "",
     wctx ? "WEEKLY BRIEF EXTRACTS:\n" + wctx : "",
   ].filter(Boolean).join('\n');
 }
@@ -74,12 +81,15 @@ export async function onRequestPost({ request, env }) {
   const weekly = (Array.isArray(body.weekly) ? body.weekly.slice(0, 3) : [])
     .map(w => ({ week: clip(w.week, 60), theatre: clip(w.theatre, 80), text: clip(w.text, 700) }))
     .filter(w => w.text);
+  const pack = (Array.isArray(body.pack) ? body.pack.slice(0, 3) : [])
+    .map(p => ({ pkg: clip(p.pkg, 40), kind: clip(p.kind, 40), text: clip(p.text, 700) }))
+    .filter(p => p.text);
   const history = (Array.isArray(body.history) ? body.history.slice(-4) : [])
     .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: clip(m.text, 600) }))
     .filter(m => m.content);
 
   const messages = [
-    { role: 'system', content: systemPrompt(serials, clip(body.formation, 40), weekly) },
+    { role: 'system', content: systemPrompt(serials, clip(body.formation, 40), weekly, pack) },
     ...history,
     { role: 'user', content: question },
   ];
