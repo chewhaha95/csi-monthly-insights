@@ -1157,14 +1157,16 @@ async function loadWkCorpus(){
   }catch(e){ WKC.state='failed'; }
 }
 /* Top weekly chunks for a question — same expanded-token matching as the
-   serial ranker: any hit qualifies, ranked by hit count (theatre hits ×2). */
+   serial ranker: any hit qualifies, ranked by hit count. Theatre AND the
+   week's date label score ×2, so "what happened in May" pulls May weeks
+   rather than whichever theatre match sits first in the corpus. */
 function _wkHits(q, n){
   if(WKC.state!=='ready') return [];
   const toks=_expand(_toks(q));
   if(!toks.length) return [];
   return WKC.chunks.map(c=>{
-    const th=c.theatre.toLowerCase(), tx=c.text.toLowerCase();
-    let sc=0; toks.forEach(t=>{ if(_hasTok(th,t)) sc+=2; else if(_hasTok(tx,t)) sc+=1; });
+    const th=c.theatre.toLowerCase(), wl=c.week.toLowerCase(), tx=c.text.toLowerCase();
+    let sc=0; toks.forEach(t=>{ if(_hasTok(th,t)) sc+=2; else if(_hasTok(wl,t)) sc+=2; else if(_hasTok(tx,t)) sc+=1; });
     return {c,sc};
   }).filter(x=>x.sc>=1).sort((a,b)=>b.sc-a.sc).slice(0,n||3).map(x=>x.c);
 }
@@ -1327,7 +1329,7 @@ async function _askEnhanced(effQ, rawQ){
   const history = ASKP.thread.filter(m=>!m.temp && (m.role==='user' || m.ans)).slice(-5,-1)
     .map(m=>({role:m.role==='user'?'user':'assistant', text: m.role==='user'? m.text : strip(m.html).slice(0,500)}));
   const fmName = state.fFormation!=='ALL' ? (FORMATIONS_ALL[state.fFormation]||{}).n : '';
-  const wk = _wkHits(effQ, 4).map(c=>({week:c.week, theatre:c.theatre, text:c.text}));
+  const wk = _wkHits(effQ, 6).map(c=>({week:c.week, theatre:c.theatre, text:c.text}));
   const pk = _pkHits(effQ, 3).map(c=>({pkg:c.label, kind:c.kind, text:c.text}));
   const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(), 9000);
   let res;

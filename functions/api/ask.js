@@ -45,7 +45,7 @@ function systemPrompt(serials, formation, weekly, pack) {
   let wctx = '';
   for (const w of weekly) {
     const block = `[Weekly brief, ${clip(w.week, 60)} · ${clip(w.theatre, 80)}] ${clip(w.text, 700)}\n\n`;
-    if (ctx.length + pctx.length + wctx.length + block.length > MAX_CONTEXT_CHARS + 4800) break;
+    if (ctx.length + pctx.length + wctx.length + block.length > MAX_CONTEXT_CHARS + 6600) break;
     wctx += block;
   }
   return [
@@ -78,7 +78,7 @@ export async function onRequestPost({ request, env }) {
   /* Up to 14 = the whole edition in summary-only form (the client's fallback
      when retrieval finds no match); MAX_CONTEXT_CHARS stays the hard cap. */
   const serials = Array.isArray(body.serials) ? body.serials.slice(0, 14) : [];
-  const weekly = (Array.isArray(body.weekly) ? body.weekly.slice(0, 4) : [])
+  const weekly = (Array.isArray(body.weekly) ? body.weekly.slice(0, 6) : [])
     .map(w => ({ week: clip(w.week, 60), theatre: clip(w.theatre, 80), text: clip(w.text, 700) }))
     .filter(w => w.text);
   const pack = (Array.isArray(body.pack) ? body.pack.slice(0, 3) : [])
