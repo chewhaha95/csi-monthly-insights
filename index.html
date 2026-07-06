@@ -1479,9 +1479,9 @@ function buildTabs(){
         state.weekOpen = true;
         $("#tabs").querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b===btn?'true':'false'));
         if(state.section!=="feed") showSection('feed');
+        // straight to the latest brief — the header's "Change week ▾" opens the picker
         renderFeed();
         scrollHome();
-        toggleWeekPop(true);
       };
       return;
     }
