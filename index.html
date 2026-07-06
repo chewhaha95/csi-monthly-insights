@@ -776,8 +776,8 @@ textarea.fb-input{resize:vertical;min-height:64px}
       <h2 class="ph">About</h2>
       <p class="pintro">Conflict Studies &amp; Insights — the <b>monthly digest</b>. Edition Jun 2026 — four packages: Manoeuvre, Sense &amp; Strike, Combat Support and Expeditionary.</p>
       <div class="about-block">
-        <div class="ab-h">Assistant gaps — on this device</div>
-        <p>Questions the Ask assistant could not answer, kept only on this device. Share them with the editors to shape the next edition.</p>
+        <div class="ab-h">Assistant gaps</div>
+        <p>Questions the Ask assistant couldn't answer. These are sent to the editors automatically (non-classified questions only) to shape the next edition, and listed here so you can review, copy or clear them.</p>
         <div id="missList" class="miss-list"></div>
         <div class="miss-actions"><button class="serchip" id="missSend">Send to editors</button><button class="serchip" id="missCopy">Copy list</button><button class="serchip" id="missClear">Clear</button></div>
         <div id="missStatus" class="fb-status"></div>
@@ -1320,14 +1320,32 @@ function askAbout(sid, kind){
   ASKP.thread.push({role:'bot',html,ans:true,q:`${label} (${s.title})`});
   _renderPaneThread(); _scrollAskPane();
 }
-/* questions the assistant couldn't answer — kept on-device for the editors */
+/* questions the assistant couldn't answer — listed on-device AND auto-sent to
+   the editors (once per new question per device; the local dedup below also
+   guards the send, so re-asking never re-sends). */
 function _recordMiss(q){
   try{
     const key='csi-misses'; const arr=JSON.parse(localStorage.getItem(key)||'[]');
     const ql=q.toLowerCase(); if(arr.some(x=>x.q.toLowerCase()===ql)) return;
     arr.push({q, t:new Date().toISOString().slice(0,10)});
     localStorage.setItem(key, JSON.stringify(arr.slice(-50)));
+    _autoSendGap(q);
   }catch(e){}
+}
+/* fire-and-forget: report a single new gap so the editors are informed without
+   anyone tapping "Send". Offline gaps stay local until sent manually. */
+function _autoSendGap(q){
+  if(navigator.onLine===false) return;
+  try{ _postFeedback({ kind:'gaps', message:q, meta:{ edition:EDITION_ID, auto:true } }).catch(()=>{}); }catch(e){}
+}
+/* Heuristic: did the online assistant decline (question not covered)? Declines
+   are brief (the grounded prompt forbids tangential padding), so a short answer
+   carrying "not covered"-type language is treated as a gap. Substring matching
+   (no lookbehind) for Safari safety. */
+const _DECLINE_MARKERS = ["isn't covered","is not covered","not covered","don't cover","doesn't cover","does not cover","no coverage","not addressed","outside the scope","outside the material","outside the corpus","no serial","not in the material","not in the corpus","can't answer","cannot answer","don't have information","no information on","not discussed","isn't addressed","falls outside"];
+function _looksDeclined(t){
+  const s=(t||'').toLowerCase(); if(!s || t.length>700) return false;
+  return _DECLINE_MARKERS.some(m=>s.includes(m));
 }
 function _getMisses(){ try{ return JSON.parse(localStorage.getItem('csi-misses')||'[]'); }catch(e){ return []; } }
 function renderMisses(){
@@ -1420,6 +1438,7 @@ async function _askEnhanced(effQ, rawQ){
   }catch(e){ /* keep whatever streamed */ }
   clearTimeout(to);
   if(!acc.trim()){ ASKP.thread=ASKP.thread.filter(m=>m!==msg); return false; }
+  if(_looksDeclined(acc)) _recordMiss(rawQ); // online gap → list it + auto-send
   // Show related serials as optional further reading — not as "what the answer
   // is based on" (answers may rest entirely on the weekly briefs).
   const cited = /\bSER\s+[A-Z]{1,3}-\d{2}\b/.test(acc);
