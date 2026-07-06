@@ -167,11 +167,8 @@ a{color:inherit}
 .weekly .wk-sec.wk-collapsed .wk-sec-body{display:none}
 .weekly .wk-dev{border-top:1px solid var(--line);padding:13px 0}
 .weekly .theatre-card .th-hdr + .wk-dev{border-top:none;padding-top:4px}
-.weekly .wk-dev-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 9px;width:100%;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit;-webkit-appearance:none}
-.weekly .wk-dev-cat{flex:0 0 100%}
 .weekly .wk-dev-cat .pill{margin-bottom:8px}
-.weekly .wk-dev-head{flex:1 1 auto;font-family:var(--disp);font-weight:700;font-size:15px;line-height:1.28;color:var(--text)}
-.weekly .wk-dev-top .wk-caret{flex:0 0 auto;margin-left:auto;font-family:var(--mono);font-size:15px;color:var(--text-3);line-height:1.2}
+.weekly .wk-dev-head{font-family:var(--disp);font-weight:700;font-size:15px;line-height:1.28;color:var(--text)}
 .weekly .wk-dev.wk-collapsed .wk-dev-body{display:none}
 .weekly .wk-dev-body{margin-top:10px}
 /* latest-brief preview mode: show a few clamped sentences, expand from a button below */
@@ -956,7 +953,7 @@ let _HAY = {}, _TIT = {};
 function buildIndex(){
 _HAY = {}; _TIT = {};
 
-SERIALS.forEach(s=>{ const _a=APP[s.id]; const _i=ICT[s.id]; const _at=[_a.lead,_a.div.d,_a.div.a,_a.bde.d,_a.bde.a].join(" "); const _it=[_i.fmt,_i.set,_i.run.join(" "),_i.dec,_i.std].join(" "); _HAY[s.id]=(s.id+" "+s.title+" "+SUMMARY[s.id]+" "+s.theatre+" "+s.blocks.map(b=>b.t).join(" ")+" "+_at+" "+_it+" "+s.formations.map(f=>FORMATIONS[f].n).join(" ")).toLowerCase(); _TIT[s.id]=(s.title+" "+SUMMARY[s.id]).toLowerCase(); });
+SERIALS.forEach(s=>{ const _a=APP[s.id]; const _i=ICT[s.id]; const _at=[_a.lead,_a.div.d,_a.div.a,_a.bde.d,_a.bde.a].join(" "); const _it=[_i.fmt,_i.set,_i.run.join(" "),_i.dec,_i.std].join(" "); _HAY[s.id]=(s.id+" "+s.title+" "+SUMMARY[s.id]+" "+s.theatre+" "+s.blocks.map(b=>b.t).join(" ")+" "+_at+" "+_it+" "+s.formations.map(f=>(FORMATIONS[f]||{n:f}).n).join(" ")).toLowerCase(); _TIT[s.id]=(s.title+" "+SUMMARY[s.id]).toLowerCase(); });
 }
 const esc = t => t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const strip = h => h.replace(/<[^>]+>/g,"");
@@ -1008,7 +1005,7 @@ function _ansCard(s,mode){
 }
 function renderAnswer(a){
   if(a.type==='bluf') return `<div class="lead">Bottom line for the ${PACKAGES.find(x=>x.k===state.tab).label} package:</div><div class="msg-bluf">${BLUF_TEXT}</div><div class="ans-link" data-jump="brief">Open the Commander's Brief →</div>`;
-  if(a.type==='planning') return `<div class="lead">Planning inputs to fold into any offensive estimate:</div>`+PLANNING.map(p=>`<div class="pl-row">• <b>${p.b}</b></div>`).join('')+`<div class="ans-link" data-jump="planning">Open Planning (6 inputs) →</div>`;
+  if(a.type==='planning') return `<div class="lead">Planning inputs to fold into any offensive estimate:</div>`+PLANNING.map(p=>`<div class="pl-row">• <b>${p.b}</b></div>`).join('')+`<div class="ans-link" data-jump="planning">Open Planning (${PLANNING.length} inputs) →</div>`;
   if(a.type==='none'){ const _th=[...new Set(SERIALS.map(s=>s.theatre))].join(', '); return `<div class="lead">I answer from this edition's ${PACKAGES.find(x=>x.k===state.tab).label} serials. Try asking about a <b>tactic</b>, an <b>outcome</b> (what worked / what failed), a <b>theatre</b> (${_th}), <b>drones / FPV</b>, or <b>what to rehearse in ICT</b>.</div>`; }
   return `<div class="lead">${_lead(a.f,a.mode,a.items.length)}</div>`+a.items.map(s=>_ansCard(s,a.mode)).join('')+`<div class="closing">Tap any serial to open the full breakdown and its ICT serial.</div>`;
 }
@@ -1264,7 +1261,14 @@ function _buildPackCorpus(){
       +(c.tempo?' Tempo: '+c.tempo:'')+(c.diffusion?' Where: '+c.diffusion:'')+(c.supersession?' Supersedes: '+c.supersession:''), c.id));
     (pk.sopReview||[]).forEach(t=>push(p.k,L,'SOP review', t));
     (pk.testICT||[]).forEach(t=>push(p.k,L,'Test in ICT', t));
-    push(p.k,L,'Month overview', pk.changed);
+    // The overview can exceed the 700-char chunk clip (notably the merged
+    // Manoeuvre & Expeditionary one) — split it on sentence boundaries so the
+    // tail isn't silently truncated out of the Ask corpus. No lookbehind (Safari).
+    { const ov=_stripTags(pk.changed||'').replace(/\s+/g,' ').trim();
+      const parts=[]; let buf='';
+      (ov.match(/[^.]*\.(?:\s+|$)|[^.]+$/g)||[]).forEach(sn=>{ if(buf && (buf+sn).length>650){ parts.push(buf); buf=sn; } else buf+=sn; });
+      if(buf.trim()) parts.push(buf);
+      parts.forEach(t=>push(p.k,L,'Month overview', t)); }
   });
   PKC.push({pkg:'ABOUT', label:'Digest', kind:'About',
     text:'AI-distilled from open-source reporting. Each serial turns recurring weekly signals into a rehearsable training prompt mapped to a formation across the three packages — Manoeuvre & Expeditionary, Sense & Strike and CS & CSS. It is not cleared intelligence or doctrine. First-cut analysis — formations calibrate the learnings themselves.', id:null});
@@ -1350,13 +1354,15 @@ function askAbout(sid, kind){
    the editors (once per new question per device; the local dedup below also
    guards the send, so re-asking never re-sends). */
 function _recordMiss(q){
+  // Storage failure (private mode, quota) must not swallow the editor report —
+  // dedup via localStorage when available, but always attempt the auto-send.
   try{
     const key='csi-misses'; const arr=JSON.parse(localStorage.getItem(key)||'[]');
-    const ql=q.toLowerCase(); if(arr.some(x=>x.q.toLowerCase()===ql)) return;
+    const ql=q.toLowerCase(); if(arr.some(x=>x.q.toLowerCase()===ql)) return; // already recorded + sent
     arr.push({q, t:new Date().toISOString().slice(0,10)});
-    localStorage.setItem(key, JSON.stringify(arr.slice(-50)));
-    _autoSendGap(q);
-  }catch(e){}
+    try{ localStorage.setItem(key, JSON.stringify(arr.slice(-50))); }catch(e){}
+  }catch(e){ /* storage unreadable — report without dedup */ }
+  _autoSendGap(q);
 }
 /* fire-and-forget: report a single new gap so the editors are informed without
    anyone tapping "Send". Offline gaps stay local until sent manually. */
@@ -1371,6 +1377,10 @@ function _autoSendGap(q){
 const _DECLINE_MARKERS = ["isn't covered","is not covered","not covered","don't cover","doesn't cover","does not cover","no coverage","not addressed","outside the scope","outside the material","outside the corpus","no serial","not in the material","not in the corpus","can't answer","cannot answer","don't have information","no information on","not discussed","isn't addressed","falls outside"];
 function _looksDeclined(t){
   const s=(t||'').toLowerCase(); if(!s || t.length>700) return false;
+  // A cited serial or weekly extract means the material DID answer — a short
+  // "no serial covers this directly, but the weekly brief reports…" is an
+  // answer, not a gap. Genuine declines cite nothing.
+  if(/\bser\s+[a-z]{1,3}-\d{2}\b/.test(s) || s.includes('(weekly brief')) return false;
   return _DECLINE_MARKERS.some(m=>s.includes(m));
 }
 function _getMisses(){ try{ return JSON.parse(localStorage.getItem('csi-misses')||'[]'); }catch(e){ return []; } }
@@ -1759,8 +1769,9 @@ function openDetail(id){
   $("#detail").classList.add('on'); $("#detail").setAttribute('aria-hidden','false');
   document.querySelector('.app').classList.add('detail-open');
   $("#askDock") && $("#askDock").classList.remove('on');
-  $("#backLabel").textContent = state.fromAsk ? "Assistant" : (state.section==='serials'?"Serials":"Feed");
-  $("#footBack").textContent = state.fromAsk ? "↑ Back to assistant" : (state.section==='serials'?"↑ Back to serials":"↑ Back to feed");
+  const _backTo = state.fromAsk||state.section==='search' ? "Assistant" : (state.section==='serials'?"Serials":"Feed");
+  $("#backLabel").textContent = _backTo;
+  $("#footBack").textContent = "↑ Back to " + _backTo.toLowerCase();
   updateBookmarkIcon();
   closePop();
   $("#detail").scrollTop = 0;
@@ -1801,6 +1812,7 @@ function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); 
 function toggleTheme(){ applyTheme(currentTheme()==='dark' ? 'light' : 'dark'); }
 
 function showSection(sec){
+  if(!document.getElementById('pane-'+sec)) return; // unknown target — don't blank the app
   state.section=sec; closeDetail(); closeAsk();
   document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on', p.id==="pane-"+sec));
   document.querySelectorAll('.nav-item').forEach(n=>n.setAttribute('aria-current', n.dataset.sec===sec?'true':'false'));
@@ -1928,11 +1940,11 @@ async function loadWeekList(){
       const label = (a.textContent||"").replace(/\s+/g,' ').trim();
       if(label){ seen.add(href); list.push({url:href, label}); }
     });
-    state.weekList = list.length>1 ? list : WEEKLY_WEEKS_FALLBACK;
-  }catch(e){
-    state.weekList = WEEKLY_WEEKS_FALLBACK;
-  }
-  return state.weekList;
+    if(list.length>1){ state.weekList = list; return state.weekList; }
+  }catch(e){}
+  // Don't cache the baked-in fallback — a transient blip on first open would
+  // otherwise pin a stale archive for the whole session; retry next call.
+  return WEEKLY_WEEKS_FALLBACK;
 }
 function closeWeekPop(){ $("#weekPop").classList.remove('on'); if(!$("#bellPop").classList.contains('on')) $("#scrim").classList.remove('on'); }
 async function toggleWeekPop(force){
@@ -1957,17 +1969,24 @@ function renderWeekPop(weeks){
     row.onclick = ()=>{ const w = weeks[+row.dataset.wk]; closeWeekPop(); selectWeek(w); };
   });
 }
+let _wkSeq = 0;
 async function selectWeek(w){
   if(!w) return;
+  const seq = ++_wkSeq; // stale-response guard: only the latest selection may render
   state.weekUrl = w.url; state.weekLabel = w.label;
   const c = $("#feedContent");
   c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Loading brief…</p></div></div>`;
+  bindWeekHead(); // "Change week ▾" stays usable while the brief loads
   scrollHome();
   try{
     const res = await fetchTimeout(WEEKLY_BASE + w.url, 9000);
+    if(seq !== _wkSeq) return; // a newer selection superseded this fetch
     if(!res.ok) throw new Error("HTTP "+res.status);
-    c.innerHTML = `<div class="weekly">${weekHeadHTML()}${reflowBrief(await res.text())}</div>`;
+    const html = await res.text();
+    if(seq !== _wkSeq) return;
+    c.innerHTML = `<div class="weekly">${weekHeadHTML()}${reflowBrief(html)}</div>`;
   }catch(e){
+    if(seq !== _wkSeq) return;
     const full = WEEKLY_BASE + (w.url==="/" ? "/" : w.url);
     c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Couldn't load this brief. <a href="${full}" target="_blank" rel="noopener">Open on the web ↗</a></p></div></div>`;
   }
@@ -1985,24 +2004,37 @@ function bindWeekHead(){ const b=$("#wkChange"); if(b) b.onclick=(e)=>{ e.stopPr
    PRESERVE that whitelist of structural classes (re-styled in the app palette via
    the .weekly rules), map bold headline utilities to .wk-strong, and strip only
    the presentational noise (utility classes, inline dark-theme styles, ids). */
-const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong','wk-dev','wk-dev-top','wk-dev-cat','wk-dev-head','wk-dev-body','wk-dev-more','wk-caret','wk-sec','wk-sec-body','wk-sec-toggle','wk-collapsed','wk-preview','wk-chart','wk-chart-more','wk-row-extra']);
+const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong','wk-dev','wk-dev-cat','wk-dev-head','wk-dev-body','wk-dev-more','wk-caret','wk-sec','wk-sec-body','wk-sec-toggle','wk-collapsed','wk-preview','wk-chart','wk-chart-more','wk-row-extra']);
 /* Rebuild each theatre card into preview developments: a headline + category
    pill and a few clamped sentences, with a "Read more" button below that reveals
    the full paragraph and implication. Atoms are read in document order so the
    varied source nesting (some devs wrapped, some flat) groups the same way.
-   Runs before the strip. */
+   Only TOP-LEVEL atoms count — an atom nested inside another collected atom
+   (e.g. the <p> inside an implication div.pl-4, as in some weeks) travels with
+   its container's clone; collecting it separately duplicated the paragraph and
+   could fabricate phantom developments. Content before the first headline is
+   kept as an un-folded lead-in rather than silently dropped. Runs pre-strip. */
 function _wkCollapseDevs(wrap, doc){
   wrap.querySelectorAll('.theatre-card').forEach(card=>{
     const hdr = card.querySelector('.th-hdr');
-    const atoms = Array.from(card.querySelectorAll('span.pill, div.font-semibold, p, div.pl-4'));
-    const units=[]; let cur=null, pend=null;
+    const all = Array.from(card.querySelectorAll('span.pill, div.font-semibold, p, ul, ol, table, blockquote, div.pl-4'));
+    const set = new Set(all);
+    const atoms = all.filter(a=>{
+      if(a.closest('.th-hdr')) return false;
+      let n=a.parentElement;
+      while(n && n!==card){ if(set.has(n)) return false; n=n.parentElement; }
+      return true;
+    });
+    const units=[], pre=[]; let cur=null, pend=null;
     atoms.forEach(a=>{
       if(a.matches('div.font-semibold')){ cur={pill:pend, head:a, body:[]}; pend=null; units.push(cur); }
       else if(a.matches('span.pill')){ pend=a; }
       else if(cur){ cur.body.push(a); }
+      else { pre.push(a); }
     });
     if(!units.length) return;
     card.innerHTML=''; if(hdr) card.appendChild(hdr);
+    pre.forEach(n=>card.appendChild(n.cloneNode(true)));
     units.forEach(u=>{
       const dev=doc.createElement('div'); dev.className='wk-dev wk-preview wk-collapsed';
       if(u.pill){ const cat=doc.createElement('div'); cat.className='wk-dev-cat'; cat.appendChild(u.pill.cloneNode(true)); dev.appendChild(cat); }
@@ -2017,32 +2049,38 @@ function _wkCollapseDevs(wrap, doc){
   });
 }
 /* Preview the Conflict Status Chart: keep the header + the first two theatre
-   rows visible, hide the rest behind a "Show all theatres" button. */
+   rows visible, hide the rest behind a "Show all theatres" button. Scoped to
+   the section's FIRST table — spanning row indices across multiple tables
+   would hide the wrong rows and miscount the button. */
 function _wkPreviewChart(sec, doc){
-  const rows = Array.from(sec.querySelectorAll('table tbody tr'));
   sec.classList.add('wk-chart');
+  const tbl=sec.querySelector('table'); if(!tbl) return;
+  const rows = Array.from(tbl.querySelectorAll('tbody tr'));
   if(rows.length<=2) return;
   rows.forEach((r,i)=>{ if(i>1) r.classList.add('wk-row-extra'); });
   sec.classList.add('wk-collapsed');
   const more=doc.createElement('button'); more.type='button'; more.className='wk-chart-more';
   more.setAttribute('data-n', String(rows.length));
   more.textContent=`Show all ${rows.length} theatres +`;
-  const tbl=sec.querySelector('table');
-  (tbl && tbl.parentNode ? tbl.parentNode : sec).appendChild(more);
+  (tbl.parentNode || sec).appendChild(more);
 }
 /* Fold each section behind its heading. BLUF and Key Developments stay open by
    default (so all five theatres and their development headlines are visible);
    Watch Areas is never folded; the Conflict Status Chart previews its first two
-   theatres; everything else starts collapsed. */
+   theatres; everything else starts collapsed. BLUF is checked before the chart
+   so a heading carrying both phrases stays an open text section. The fold walks
+   siblings of the h2's outermost wrapper inside the section, so a wrapped
+   heading still folds the whole body. */
 function _wkCollapseSections(wrap, doc){
   wrap.querySelectorAll('section').forEach(sec=>{
     const h=sec.querySelector('h2'); if(!h) return;
     const t=h.textContent||'';
     if(/watch area/i.test(t)) return; // always shown — no toggle
-    if(/conflict status/i.test(t)){ _wkPreviewChart(sec, doc); return; }
     const open=/BLUF/i.test(t) || /key development/i.test(t);
+    if(!open && /conflict status/i.test(t)){ _wkPreviewChart(sec, doc); return; }
+    let top=h; while(top.parentElement && top.parentElement!==sec) top=top.parentElement;
     const body=doc.createElement('div'); body.className='wk-sec-body';
-    let n=h.nextSibling; while(n){ const nx=n.nextSibling; body.appendChild(n); n=nx; }
+    let n=top.nextSibling; while(n){ const nx=n.nextSibling; body.appendChild(n); n=nx; }
     sec.appendChild(body);
     sec.classList.add('wk-sec'); if(!open) sec.classList.add('wk-collapsed');
     h.classList.add('wk-sec-toggle');
@@ -2060,22 +2098,30 @@ function reflowBrief(htmlString){
   wrap.querySelectorAll('section').forEach(sec=>{
     if(sec.querySelector('a[href*="form.gov"]') || /feedback\s*&?\s*reflection|share your (feedback|thoughts)/i.test(sec.textContent||'')) sec.remove();
   });
+  // sectionless fallback (a week reflowed via <main>/<article>): kill the form
+  // CTA's enclosing block so the external form never renders in-app
+  wrap.querySelectorAll('a[href*="form.gov"]').forEach(a=>{ (a.closest('section')||a.closest('div')||a).remove(); });
   // structural tagging (needs original classes, so do it before the strip pass)
   wrap.querySelectorAll('h2').forEach(h=>{ if(/BLUF/i.test(h.textContent||'')){ const d=h.nextElementSibling; if(d) d.classList.add('wk-bluf'); } });
   wrap.querySelectorAll('[class*="bg-panel"]').forEach(d=>d.classList.add('wk-panel'));
   _wkCollapseDevs(wrap, doc);      // per-development preview cards
   _wkCollapseSections(wrap, doc);  // per-section folds + chart preview
-  // strip pass: keep only whitelisted structure, drop utilities/styles/ids
+  // strip pass: keep only whitelisted structure, drop utilities/styles/ids and
+  // inline event handlers (fetched markup must never execute in the app origin)
   wrap.querySelectorAll('*').forEach(el=>{
     const orig = (el.getAttribute('class')||'').split(/\s+/).filter(Boolean);
     const keep = orig.filter(c=>_WK_KEEP.has(c));
     if(orig.includes('font-semibold')||orig.includes('font-bold')) keep.push('wk-strong');
     el.removeAttribute('style'); el.removeAttribute('id');
+    Array.from(el.attributes).forEach(at=>{ if(/^on/i.test(at.name)) el.removeAttribute(at.name); });
     if(keep.length) el.setAttribute('class', keep.join(' ')); else el.removeAttribute('class');
     if(el.tagName==='A'){
       const href = el.getAttribute('href');
-      if(href && !/^https?:|^mailto:/i.test(href)) el.setAttribute('href', WEEKLY_BASE + (href.startsWith('/')?href:'/'+href));
-      el.setAttribute('target','_blank'); el.setAttribute('rel','noopener');
+      if(href && href.startsWith('#')){ /* in-page anchor — leave in-app, no new tab */ }
+      else {
+        if(href && !/^https?:|^mailto:/i.test(href)) el.setAttribute('href', WEEKLY_BASE + (href.startsWith('/')?href:'/'+href));
+        el.setAttribute('target','_blank'); el.setAttribute('rel','noopener');
+      }
     }
     if(el.tagName==='IMG'){ const s=el.getAttribute('src'); if(s && !/^https?:|^data:/i.test(s)) el.setAttribute('src', WEEKLY_BASE + (s.startsWith('/')?s:'/'+s)); }
     if(el.tagName==='SCRIPT'||el.tagName==='STYLE'||el.tagName==='LINK') el.remove();
@@ -2151,8 +2197,6 @@ function init(){
     if(dm){ const dev=dm.closest('.wk-dev'); if(dev){ const col=dev.classList.toggle('wk-collapsed'); dm.textContent=col?'Read more +':'Show less –'; } return; }
     const cm = e.target.closest('.wk-chart-more');
     if(cm){ const sec=cm.closest('.wk-chart'); if(sec){ const col=sec.classList.toggle('wk-collapsed'); cm.textContent=col?('Show all '+(cm.getAttribute('data-n')||'')+' theatres +'):'Show fewer –'; } return; }
-    const dt = e.target.closest('.wk-dev-top');
-    if(dt){ const dev=dt.closest('.wk-dev'); if(dev){ const col=dev.classList.toggle('wk-collapsed'); const c=dt.querySelector('.wk-caret'); if(c) c.textContent=col?'+':'–'; } return; }
     const ow = e.target.closest('[data-openweek]');
     if(ow){ e.preventDefault(); goWeekly(); return; }
     const bm = e.target.closest('[data-bm]');
@@ -2208,7 +2252,7 @@ function init(){
     if(card) openDetail(card.dataset.id);
   });
   // keyboard access for the hrefless "Read the weekly brief" CTA
-  document.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ const ow=e.target && e.target.closest && e.target.closest('[data-openweek]'); if(ow){ e.preventDefault(); goWeekly(); } } });
+  document.addEventListener('keydown', e=>{ if(e.repeat) return; if(e.key==='Enter'||e.key===' '){ const ow=e.target && e.target.closest && e.target.closest('[data-openweek]'); if(ow){ e.preventDefault(); goWeekly(); } } });
 
   // top bar
   $("#btnBell").onclick = (e)=>{ e.stopPropagation(); togglePop(); };

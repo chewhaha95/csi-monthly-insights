@@ -1,6 +1,6 @@
 /* Conflict Studies & Insights — service worker.
    Bump CACHE (v1 -> v2 ...) whenever you publish a new edition to force a refresh. */
-const CACHE = 'csi-insights-v84';
+const CACHE = 'csi-insights-v86';
 const ASSETS = [
   './', './index.html', './data.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-512-maskable.png', './apple-touch-icon.png', './og-cover.png'
@@ -21,10 +21,13 @@ self.addEventListener('fetch', e => {
   // fetched from conflictstudiesandinsights.pages.dev) must pass through to the
   // network untouched — never route them through our cache.
   if (new URL(req.url).origin !== self.location.origin) return;
+  // Only ever cache clean 200s — a transient 500/404 must not overwrite the
+  // good cached copy that offline launches depend on (200 also excludes 206
+  // partials, which cache.put rejects).
   // Page loads: network-first so a freshly published edition shows when online; cache fallback offline.
   if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(req).then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put('./index.html', cp)); return r; })
+      fetch(req).then(r => { if (r.status === 200) { const cp = r.clone(); caches.open(CACHE).then(c => c.put('./index.html', cp)); } return r; })
         .catch(() => caches.match('./index.html'))
     );
     return;
@@ -32,7 +35,7 @@ self.addEventListener('fetch', e => {
   // Content data: network-first too, so a freshly published edition's serials show when online (like the page itself).
   if (/\/data\.js(\?|$)/.test(new URL(req.url).pathname)) {
     e.respondWith(
-      fetch(req).then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return r; })
+      fetch(req).then(r => { if (r.status === 200) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })
         .catch(() => caches.match(req))
     );
     return;
@@ -40,8 +43,9 @@ self.addEventListener('fetch', e => {
   // Everything else (icons, fonts): cache-first, fill cache on first online fetch.
   e.respondWith(
     caches.match(req).then(r => r || fetch(req).then(rr => {
-      const cp = rr.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return rr;
-    }).catch(() => r))
+      if (rr.status === 200) { const cp = rr.clone(); caches.open(CACHE).then(c => c.put(req, cp)); }
+      return rr;
+    }).catch(() => new Response('offline', { status: 504, statusText: 'offline' })))
   );
 });
 
