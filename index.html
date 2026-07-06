@@ -774,7 +774,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
     <!-- ABOUT -->
     <div class="pane" id="pane-about">
       <h2 class="ph">About</h2>
-      <p class="pintro">Conflict Studies &amp; Insights — the <b>monthly digest</b>. Edition Jun 2026 — four packages: Manoeuvre, Sense &amp; Strike, Combat Support and Expeditionary.</p>
+      <p class="pintro">Conflict Studies &amp; Insights — the <b>monthly digest</b>. Edition Jun 2026 — three packages: Manoeuvre &amp; Expeditionary, Sense &amp; Strike, and CS &amp; CSS.</p>
       <div class="about-block">
         <div class="ab-h">Assistant gaps</div>
         <p>Questions the Ask assistant couldn't answer. These are sent to the editors automatically (non-classified questions only) to shape the next edition, and listed here so you can review, copy or clear them.</p>
@@ -801,7 +801,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
       </div>
       <div class="about-block">
         <div class="ab-h">Method</div>
-        <p><b>AI-distilled from open-source reporting.</b> Each serial turns recurring weekly signals into a rehearsable training prompt mapped to a formation across the four packages — Manoeuvre, Sense &amp; Strike, Combat Support and Expeditionary. It is not cleared intelligence or doctrine.</p>
+        <p><b>AI-distilled from open-source reporting.</b> Each serial turns recurring weekly signals into a rehearsable training prompt mapped to a formation across the three packages — Manoeuvre &amp; Expeditionary, Sense &amp; Strike and CS &amp; CSS. It is not cleared intelligence or doctrine.</p>
       </div>
       <div class="about-block">
         <div class="ab-h">Verdict legend</div>
@@ -814,7 +814,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
       </div>
       <div class="about-block">
         <div class="ab-h">The five theatres</div>
-        <p>The weekly brief tracks <b>Russia–Ukraine</b>, <b>Israel–Lebanon</b>, <b>Israel–Gaza</b>, <b>Israel–US–Iran</b> and <b>Thailand–Cambodia</b>. This edition's serials, across all four packages, draw from Russia–Ukraine, Israel–Lebanon, Israel–Gaza and Thailand–Cambodia; Israel–US–Iran is tracked weekly but yielded no serial this edition.</p>
+        <p>The weekly brief tracks <b>Russia–Ukraine</b>, <b>Israel–Lebanon</b>, <b>Israel–Gaza</b>, <b>Israel–US–Iran</b> and <b>Thailand–Cambodia</b>. This edition's serials, across all three packages, draw from Russia–Ukraine, Israel–Lebanon, Israel–Gaza and Thailand–Cambodia; Israel–US–Iran is tracked weekly but yielded no serial this edition.</p>
       </div>
       <div class="caveat-box">
         <p><b>Analyst review required before promulgation.</b> Outcome verdicts reflect open-source reporting at time of writing and may revise as events develop. Verify against current staff assessments and apply judgement before use.</p>
@@ -878,7 +878,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
   <div class="pop" id="bellPop">
     <div id="bellNew" class="bell-new" style="display:none"></div>
     <h4>Edition · Jun 2026</h4>
-    <p><b id="popCount">… serials</b> <span id="popScope">across all four packages.</span></p>
+    <p><b id="popCount">… serials</b> <span id="popScope">across all three packages.</span></p>
     <p>Handling: <b>Open source · training use</b>.</p>
     <p style="color:var(--text-3);margin-bottom:9px">AI-distilled — analyst review required before promulgation.</p>
     <button id="notifyBtn" class="notify-btn" style="display:none"></button>
@@ -890,13 +890,15 @@ textarea.fb-input{resize:vertical;min-height:64px}
 <script>
 /* ===================== RENDER ===================== */
 let SERIALS, PACK, FRAME, PLANNING, KEY_JUDGEMENTS, FORMATIONS, BLUF_TEXT, SUGGESTIONS, _FMK;
-let SUMMARY={}, SIGNAL={}, APP={}, ICT={}, LEARN={}, FORMATIONS_ALL={}, ALL_SERIALS=[], PKG_OF={};
+let SUMMARY={}, SIGNAL={}, APP={}, ICT={}, LEARN={}, FORMATIONS_ALL={}, ALL_SERIALS=[], PKG_OF={}, SUBPKG_OF={};
 function buildMerged(){
-  SUMMARY={}; SIGNAL={}; APP={}; ICT={}; LEARN={}; FORMATIONS_ALL={}; ALL_SERIALS=[]; PKG_OF={};
-  PACKAGES.forEach(p=>{ const d=PKG[p.k]; if(!d) return;
+  SUMMARY={}; SIGNAL={}; APP={}; ICT={}; LEARN={}; FORMATIONS_ALL={}; ALL_SERIALS=[]; PKG_OF={}; SUBPKG_OF={};
+  // Walk each display group's member bundles: PKG_OF is the group (tab/filter/
+  // serials grouping); SUBPKG_OF is the original bundle (echelons, per-serial).
+  PACKAGES.forEach(p=>{ (p.members||[p.k]).forEach(mk=>{ const d=PKG[mk]; if(!d) return;
     Object.assign(SUMMARY,d.SUMMARY); Object.assign(SIGNAL,d.SIGNAL); Object.assign(APP,d.APP);
     Object.assign(ICT,d.ICT); Object.assign(LEARN,d.LEARN||{}); Object.assign(FORMATIONS_ALL,d.FORMATIONS);
-    d.SERIALS.forEach(s=>{ ALL_SERIALS.push(s); PKG_OF[s.id]=p.k; }); });
+    d.SERIALS.forEach(s=>{ ALL_SERIALS.push(s); PKG_OF[s.id]=p.k; SUBPKG_OF[s.id]=mk; }); }); });
   buildIndexAll();
 }
 /* global search index across ALL_SERIALS (Search pane) */
@@ -917,7 +919,7 @@ function buildIndexAll(){
   });
 }
 function loadPackage(tab){
-  const d = PKG[tab] || PKG.MANOEUVRE;
+  const d = PKG[tab] || PKG.MANEXP;
   SERIALS=d.SERIALS;
   PACK=d.PACK; FRAME=d.FRAME; PLANNING=d.PLANNING; KEY_JUDGEMENTS=d.KEY_JUDGEMENTS; FORMATIONS=d.FORMATIONS;
   BLUF_TEXT=d.BLUF; SUGGESTIONS=d.SUGGESTIONS; _FMK=d.FMK;
@@ -1070,7 +1072,7 @@ function answerForAll(q){
 /* Pick the decision card matching the reader's formation: divisions get the
    division card, units/brigades get the second-echelon card. */
 function _echCard(id){
-  const a=APP[id]||{}, ech=(PKG[PKG_OF[id]]||{}).echelons||["Division","Brigade"];
+  const a=APP[id]||{}, ech=(PKG[SUBPKG_OF[id]]||{}).echelons||["Division","Brigade"];
   return {card:a.div||{}, ech:ech[0]};
 }
 const _firstSent = (t,n)=>{ const parts=String(t||'').split('. '); const out=parts.slice(0,n).join('. '); return out + (parts.length>n && !out.endsWith('.') ? '.' : ''); };
@@ -1085,7 +1087,7 @@ function _leadAll(f,mode,n){
   if(f.outcome==='threat') return `The <b>capability gaps</b> this edition flags${f.theatre?` in ${THEATRE_NAME[f.theatre]}`:''}:`;
   if(fm) return `Most relevant for <b>${fm}</b>:`;
   if(f.theatre) return `From the <b>${THEATRE_NAME[f.theatre]}</b> theatre:`;
-  return `Here's what's most relevant across the four packages:`;
+  return `Here's what's most relevant across the three packages:`;
 }
 const _pkgLabel = k => { const p=PACKAGES.find(x=>x.k===k); return p?p.label:k; };
 function synthAll(a){
@@ -1241,7 +1243,7 @@ function _buildPackCorpus(){
     push(p.k,L,'Month overview', pk.changed);
   });
   PKC.push({pkg:'ABOUT', label:'Digest', kind:'About',
-    text:'AI-distilled from open-source reporting. Each serial turns recurring weekly signals into a rehearsable training prompt mapped to a formation across the four packages — Manoeuvre, Sense & Strike, Combat Support and Expeditionary. It is not cleared intelligence or doctrine. First-cut analysis — formations calibrate the learnings themselves.', id:null});
+    text:'AI-distilled from open-source reporting. Each serial turns recurring weekly signals into a rehearsable training prompt mapped to a formation across the three packages — Manoeuvre & Expeditionary, Sense & Strike and CS & CSS. It is not cleared intelligence or doctrine. First-cut analysis — formations calibrate the learnings themselves.', id:null});
   PKC.push({pkg:'ABOUT', label:'Digest', kind:'About',
     text:'This monthly digest is the formation-level distillation of the Conflict Studies & Insights weekly brief, which tracks signals across the conflict theatres. The weekly answers what is happening; the monthly answers so what — and what to rehearse.', id:null});
 }
@@ -1498,7 +1500,7 @@ async function askAll(text){
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:true, weekUrl:null, weekLabel:null, weekList:null, q:"", lastTopic:null, newEdition:false, newWeek:null };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANEXP", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:true, weekUrl:null, weekLabel:null, weekList:null, q:"", lastTopic:null, newEdition:false, newWeek:null };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -1703,7 +1705,7 @@ function decisionCard(ech, c, cls){
   </div>`;
 }
 function detailHTML(s){
-  const ech = (PKG[PKG_OF[s.id]]||{}).echelons || ["Division","Brigade"];
+  const ech = (PKG[SUBPKG_OF[s.id]]||{}).echelons || ["Division","Brigade"];
   const blocks = s.blocks.map(b=>`<div class="block"><div class="bl">${b.l}</div><p>${b.t}</p></div>`).join('');
   const srcs = s.sources.length ? `<div class="srcs"><div class="sh">Learn more</div><div class="sh-sub">${s.sources.length} source${s.sources.length===1?'':'s'} — tap to read the original reporting ↗</div>${
       s.sources.map((x,i)=>`<a href="${x.u}" target="_blank" rel="noopener"><span class="src-n">[${i+1}]</span><span class="src-name">${x.n}</span><span class="src-go">↗</span></a>`).join('')}</div>` : '';
@@ -2053,7 +2055,7 @@ function init(){
   window.addEventListener('orientationchange', ()=>setTimeout(_vvUpd,250));
   { const th = new Set(ALL_SERIALS.map(s=>s.theatre)).size;
     $("#popCount").textContent = ALL_SERIALS.length + " serials";
-    $("#popScope").textContent = `across all four packages — Manoeuvre, Sense & Strike, Combat Support & Expeditionary — spanning ${th} reporting theatre${th===1?'':'s'}.`; }
+    $("#popScope").textContent = `across all three packages — Manoeuvre & Expeditionary, Sense & Strike, and CS & CSS — spanning ${th} reporting theatre${th===1?'':'s'}.`; }
 
   // feed taps (delegation)
   $("#feedContent").addEventListener('click', e=>{

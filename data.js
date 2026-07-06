@@ -48,11 +48,15 @@ const SERIALS_M = [
     ] }
 ];
 const FORMATIONS_M = {};
+/* Three display groups. `members` lists the underlying content bundles that
+   feed each tab — Manoeuvre & Expeditionary are merged, CS & CSS is the former
+   Combat Support pack relabelled. Serials keep their own per-bundle echelons
+   (see SUBPKG_OF in index.html), so a merged tab still labels each serial's
+   decision cards at the right formation level. */
 const PACKAGES = [
-  {k:"MANOEUVRE", label:"Manoeuvre", title:"Manoeuvre", sub:"This month's serials · the close fight", live:true},
-  {k:"SENSE", label:"Sense & Strike", title:"Sense & Strike", sub:"This month's serials · deep fires & air defence", live:true},
-  {k:"CSS", label:"Combat Support", title:"Combat Support", sub:"This month's serials · engineering, sustainment & comms", live:true},
-  {k:"EXPED", label:"Expeditionary", title:"Expeditionary", sub:"This month's serials · deployed & observer missions", live:true}
+  {k:"MANEXP", label:"Manoeuvre & Expeditionary", title:"Manoeuvre & Expeditionary", sub:"This month's serials · the close fight & deployed missions", live:true, members:["MANOEUVRE","EXPED"]},
+  {k:"SENSE", label:"Sense & Strike", title:"Sense & Strike", sub:"This month's serials · deep fires & air defence", live:true, members:["SENSE"]},
+  {k:"CSS", label:"CS & CSS", title:"CS & CSS", sub:"This month's serials · engineering, sustainment & comms", live:true, members:["CSS"]}
 ];
 /* ===== Monthly command pack (the prototype's top-down structure) ===== */
 const PACK_M = {
@@ -536,7 +540,7 @@ const LEARN_CSS = {
   "CS-03":{ topic:"Infrastructure siege defeat", status:"Action now", why:"A drone siege can degrade a garrison by collapsing civilian infrastructure without a ground assault — the audit and 72-hour power are the defence.", worked:"El Obeid's power-then-water-then-comms cascade shows exactly the failure chain to design against.", next:"Make an infrastructure vulnerability audit and 72-hour standalone Signals power a pre-deployment standard." }
 };
 const PACK_CSS = {
-  kicker:"June 2026 · Combat Support", titleLine:"for combat-support formations",
+  kicker:"June 2026 · CS & CSS", titleLine:"for CS & CSS formations",
   changed:"June turned combat support into a signature-and-dependency fight. Ukraine made Crimea's arteries non-operational not by re-striking bridges but by killing the repair effort — strike, confirm the repair order, destroy the repair assets before arrival — while its own repairs stayed under a 90-minute signature. Its 50,000-mission UGV fleet moved thousands of tonnes and evacuated the unreachable, but exposed two new single points of failure: the Starlink C2 link and UGV-specific route passability. And in Sudan the RSF siege of El Obeid showed a garrison can be collapsed through its civilian infrastructure — power, then water, then communications — without a ground assault. For engineer and signal units: hide your repair signature, harden the infrastructure chain, and give C2 72 hours of its own power.",
   stats:[
     {n:3, k:"Priority learnings", s:"For this month"},
@@ -891,7 +895,29 @@ const FRAME_EXP = {
     {t:"Make outposts self-sufficient for 72 hours", d:"Set a standard that any outpost can operate on independent power and defend against air threats for at least three days, so severing the local grid does not collapse it.", id:"EX-04"}
   ]
 };
+/* Merged Manoeuvre & Expeditionary bundle for the combined tab. FRAME sections
+   and the overview arrays are concatenated (lossless); the lede is a concise
+   synthesis of the two packages' BLUFs — no new claims. Per-serial echelons are
+   resolved via SUBPKG_OF, so this bundle's `echelons` is only a fallback. */
+const FRAME_MANEXP = {
+  bluf:"June rewarded method over mass and punished predictability — across the close fight and deployed missions alike. Formations advanced in increments too small to answer (a ceasefire line walked 10 km under cover of talks; three facts created in a single day at O'Smach), split the drone fight into an unjammable close layer and an autonomous deep layer, and paid for predictable patterns — co-located command, logistics and communications, set-piece casualty evacuation, telegraphed approaches, and outposts dependent on local utilities. The response is structural: pre-authorise exploitation triggers, separate the three functions, read the pattern rather than the incident, treat every predictable approach as a probable ambush, and make outposts self-sufficient for 72 hours.",
+  opportunities: FRAME_M.opportunities.concat(FRAME_EXP.opportunities),
+  vulnerabilities: FRAME_M.vulnerabilities.concat(FRAME_EXP.vulnerabilities),
+  capdev: FRAME_M.capdev.concat(FRAME_EXP.capdev)
+};
+const PACK_MANEXP = Object.assign({}, PACK_M, {
+  kicker:"June 2026 · Manoeuvre & Expeditionary",
+  titleLine:"for manoeuvre & expeditionary formations",
+  commandLens: PACK_M.commandLens + " " + PACK_EXP.commandLens,
+  brigadeBluf: [PACK_M.brigadeBluf, PACK_EXP.brigadeBluf].filter(Boolean).join(" "),
+  divPriorities: (PACK_M.divPriorities||[]).concat(PACK_EXP.divPriorities||[]),
+  implications: (PACK_M.implications||[]).concat(PACK_EXP.implications||[]),
+  contests: (PACK_M.contests||[]).concat(PACK_EXP.contests||[]),
+  worked: (PACK_M.worked||[]).concat(PACK_EXP.worked||[]),
+  failed: (PACK_M.failed||[]).concat(PACK_EXP.failed||[])
+});
 const PKG = {
+  MANEXP:    { SERIALS:SERIALS_M.concat(SERIALS_EXP), SUMMARY:Object.assign({},SUMMARY_M,SUMMARY_EXP), SIGNAL:Object.assign({},SIGNAL_M,SIGNAL_EXP), APP:Object.assign({},APP_M,APP_EXP), ICT:Object.assign({},ICT_M,ICT_EXP), LEARN:Object.assign({},LEARN_M,LEARN_EXP), PACK:PACK_MANEXP, FRAME:FRAME_MANEXP, PLANNING:PLANNING_M.concat(PLANNING_EXP), KEY_JUDGEMENTS:KEY_JUDGEMENTS_M.concat(KEY_JUDGEMENTS_EXP), FORMATIONS:Object.assign({},FORMATIONS_M,FORMATIONS_EXP), BLUF:[BLUF_TEXT_M,BLUF_EXP].filter(Boolean).join(" "), SUGGESTIONS:[...new Set(SUGGESTIONS_M.concat(SUGGESTIONS_EXP))].slice(0,6), FMK:Object.assign({},_FMK_M,_FMK_EXP), echelons:["Division","Brigade"] },
   MANOEUVRE: { SERIALS:SERIALS_M, SUMMARY:SUMMARY_M, SIGNAL:SIGNAL_M, APP:APP_M, ICT:ICT_M, LEARN:LEARN_M, PACK:PACK_M, FRAME:FRAME_M, PLANNING:PLANNING_M, KEY_JUDGEMENTS:KEY_JUDGEMENTS_M, FORMATIONS:FORMATIONS_M, BLUF:BLUF_TEXT_M, SUGGESTIONS:SUGGESTIONS_M, FMK:_FMK_M, echelons:["Division","Brigade"] },
   SENSE:     { SERIALS:SERIALS_S, SUMMARY:SUMMARY_S, SIGNAL:SIGNAL_S, APP:APP_S, ICT:ICT_S, LEARN:LEARN_S, PACK:PACK_S, FRAME:FRAME_S, PLANNING:PLANNING_S, KEY_JUDGEMENTS:KEY_JUDGEMENTS_S, FORMATIONS:FORMATIONS_S, BLUF:BLUF_S, SUGGESTIONS:SUGGESTIONS_S, FMK:_FMK_S, echelons:["Division","Unit"] },
   CSS:       { SERIALS:SERIALS_CSS, SUMMARY:SUMMARY_CSS, SIGNAL:SIGNAL_CSS, APP:APP_CSS, ICT:ICT_CSS, LEARN:LEARN_CSS, PACK:PACK_CSS, FRAME:FRAME_CSS, PLANNING:PLANNING_CSS, KEY_JUDGEMENTS:KEY_JUDGEMENTS_CSS, FORMATIONS:FORMATIONS_CSS, BLUF:BLUF_CSS, SUGGESTIONS:SUGGESTIONS_CSS, FMK:_FMK_CSS, echelons:["Division","Unit"] },
