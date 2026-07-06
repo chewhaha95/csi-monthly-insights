@@ -958,7 +958,7 @@ function _ansCard(s,mode){
 function renderAnswer(a){
   if(a.type==='bluf') return `<div class="lead">Bottom line for the ${PACKAGES.find(x=>x.k===state.tab).label} package:</div><div class="msg-bluf">${BLUF_TEXT}</div><div class="ans-link" data-jump="brief">Open the Commander's Brief →</div>`;
   if(a.type==='planning') return `<div class="lead">Planning inputs to fold into any offensive estimate:</div>`+PLANNING.map(p=>`<div class="pl-row">• <b>${p.b}</b></div>`).join('')+`<div class="ans-link" data-jump="planning">Open Planning (6 inputs) →</div>`;
-  if(a.type==='none'){ const _th=[...new Set(SERIALS.map(s=>s.theatre))].join(', '); const _fm=Object.values(FORMATIONS).map(f=>f.n).join(', '); return `<div class="lead">I answer from this edition's ${PACKAGES.find(x=>x.k===state.tab).label} serials. Try asking about a <b>tactic</b>, an <b>outcome</b> (what worked / what failed), a <b>theatre</b> (${_th}), a <b>formation</b> (${_fm}), <b>drones / FPV</b>, or <b>what to rehearse in ICT</b>.</div>`; }
+  if(a.type==='none'){ const _th=[...new Set(SERIALS.map(s=>s.theatre))].join(', '); return `<div class="lead">I answer from this edition's ${PACKAGES.find(x=>x.k===state.tab).label} serials. Try asking about a <b>tactic</b>, an <b>outcome</b> (what worked / what failed), a <b>theatre</b> (${_th}), <b>drones / FPV</b>, or <b>what to rehearse in ICT</b>.</div>`; }
   return `<div class="lead">${_lead(a.f,a.mode,a.items.length)}</div>`+a.items.map(s=>_ansCard(s,a.mode)).join('')+`<div class="closing">Tap any serial to open the full breakdown and its ICT serial.</div>`;
 }
 
@@ -1020,9 +1020,6 @@ function _detectAll(qlc){
 function _rankAll(q,f){
   const toks=_expand(_toks(q));
   let pool=ALL_SERIALS.slice();
-  // a formation named in the question overrides the my-formation facet —
-  // otherwise asking about another formation returns nothing
-  if(state.fFormation!=='ALL' && !f.formation) pool=pool.filter(s=>s.formations.includes(state.fFormation));
   return pool.map(s=>{
     let sc=0;
     toks.forEach(t=>{ if(_hasTok(_TITALL[s.id],t)) sc+=3; else if(_hasTok(_HAYALL[s.id],t)) sc+=1; });
@@ -1047,11 +1044,8 @@ function answerForAll(q){
 }
 /* Pick the decision card matching the reader's formation: divisions get the
    division card, units/brigades get the second-echelon card. */
-const _DIVS = new Set(["3DIV","9DIV","6DIV"]);
-function _echCard(id, fmOverride){
+function _echCard(id){
   const a=APP[id]||{}, ech=(PKG[PKG_OF[id]]||{}).echelons||["Division","Brigade"];
-  const fm=fmOverride || state.fFormation;
-  if(fm!=='ALL' && !_DIVS.has(fm)) return {card:a.bde||{}, ech:ech[1]};
   return {card:a.div||{}, ech:ech[0]};
 }
 const _firstSent = (t,n)=>{ const parts=String(t||'').split('. '); const out=parts.slice(0,n).join('. '); return out + (parts.length>n && !out.endsWith('.') ? '.' : ''); };
@@ -1072,7 +1066,7 @@ const _pkgLabel = k => { const p=PACKAGES.find(x=>x.k===k); return p?p.label:k; 
 function synthAll(a){
   if(a.type==='none'){
     const th=[...new Set(ALL_SERIALS.map(s=>THEATRE_NAME[s.conflict]||s.theatre))].join(', ');
-    return `<div class="lead">I answer mainly from the <b>weekly-brief archive</b>, distilled through June's <b>14 serials</b> and <b>pack overviews</b>. Try a <b>tactic</b> (drones, fibre-optic FPV, double-tap, saturation), an <b>outcome</b> (what worked / what to fix), a <b>theatre</b> (${th}), a <b>formation</b> (Armour, Engineers, Army Int…), or ask <b>what to rehearse</b> or for the <b>bottom line</b>.</div>`;
+    return `<div class="lead">I answer mainly from the <b>weekly-brief archive</b>, distilled through June's <b>14 serials</b> and <b>pack overviews</b>. Try a <b>tactic</b> (drones, fibre-optic FPV, double-tap, saturation), an <b>outcome</b> (what worked / what to fix), a <b>theatre</b> (${th}), or ask <b>what to rehearse</b> or for the <b>bottom line</b>.</div>`;
   }
   if(a.type==='bluf'){
     return `<div class="lead">Bottom line — <b>${_pkgLabel(a.pkg)}</b>, June 2026:</div><div class="msg-bluf">${PKG[a.pkg].BLUF}</div>`
@@ -1086,18 +1080,12 @@ function synthAll(a){
       + a.items.map(s=>_ansCard(s,'serials')).join('');
   }
   const items=a.items, n=items.length;
-  /* the formation named in the question outranks the my-formation facet */
-  const effFm = (a.f && a.f.formation) || (state.fFormation!=='ALL' ? state.fFormation : null);
-  const fmName = effFm && (FORMATIONS_ALL[effFm]||{}).n;
-  /* formation line: the top serial's decision, at the reader's echelon */
-  const forLine = ()=>{ if(!fmName || !items.length) return '';
-    const e=_echCard(items[0].id, effFm); if(!e.card.d) return '';
-    return `<div class="ans-for"><b>For ${fmName} (${e.ech.toLowerCase()}) —</b> ${e.card.d} <span class="cite">SER ${items[0].id}</span></div>`; };
+  const fmName = null, forLine = ()=>'';
   /* field answers: owner / trigger / measure / trade-off from the decision cards */
   if(a.mode==='field'){
     const key={owner:'o',trigger:'t',measure:'m',tradeoff:'x'}[a.f.field];
     const label={owner:'Ownership',trigger:'Triggers',measure:'Measures of success',tradeoff:'Trade-offs'}[a.f.field];
-    const rows=items.slice(0,3).map(s=>{ const e=_echCard(s.id, effFm); const v=e.card[key]; if(!v) return '';
+    const rows=items.slice(0,3).map(s=>{ const e=_echCard(s.id); const v=e.card[key]; if(!v) return '';
       return `<div class="ans-frow" data-open="${s.id}"><div class="af-t">${s.title}</div><p>${v} <span class="cite">SER ${s.id} · ${e.ech}</span></p></div>`; }).join('');
     return `<div class="lead"><b>${label}</b> — from the decision cards${fmName?` at ${fmName}'s echelon`:''}:</div>${rows}`
       + `<div class="closing">Tap a serial for the full decision card — owner, trigger, trade-off and measure together.</div>`;
@@ -1261,7 +1249,7 @@ function _serialsRankedAll(q){
 }
 
 /* ----- Ask pane thread ----- */
-const ASK_EXAMPLES = ["How do we counter fibre-optic drones?","Who owns the casualty-evacuation change?","What should engineers rehearse?","List all threats this month"];
+const ASK_EXAMPLES = ["How do we counter fibre-optic drones?","Who owns the casualty-evacuation change?","What should be rehearsed in ICT?","List all threats this month"];
 const ASKP = { thread: [], seeded:false };
 function _renderPaneThread(){ const t=$("#askPaneThread"); if(!t) return;
   t.innerHTML = ASKP.thread.map((m,i)=> m.role==='user'
@@ -1367,7 +1355,6 @@ async function _askEnhanced(effQ, rawQ){
   const scoped = !!(a.items && a.items.length);
   const history = ASKP.thread.filter(m=>!m.temp && (m.role==='user' || m.ans)).slice(-5,-1)
     .map(m=>({role:m.role==='user'?'user':'assistant', text: m.role==='user'? m.text : strip(m.html).slice(0,500)}));
-  const fmName = state.fFormation!=='ALL' ? (FORMATIONS_ALL[state.fFormation]||{}).n : '';
   // Full-context: send the whole corpus, relevance-ranked (matches first) so a
   // long-context model reasons over everything and a small-window fallback
   // still gets the top slice. Weekly briefs are the primary layer. Cap each
@@ -1380,7 +1367,7 @@ async function _askEnhanced(effQ, rawQ){
   let res;
   try{
     res = await fetch('/api/ask',{ method:'POST', headers:{'content-type':'application/json'},
-      body:JSON.stringify({question:rawQ, history, serials:sr, pack:pk, weekly:wk, formation:fmName}), signal:ctl.signal });
+      body:JSON.stringify({question:rawQ, history, serials:sr, pack:pk, weekly:wk}), signal:ctl.signal });
   }catch(e){ clearTimeout(to); return false; }
   if(!res.ok || !res.body){ clearTimeout(to); return false; }
   ASKP.thread=ASKP.thread.filter(m=>!m.temp);
@@ -1460,11 +1447,10 @@ async function askAll(text){
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:true, weekUrl:null, weekLabel:null, weekList:null, q:"", fFormation:"ALL", serialFormation:"ALL", lastTopic:null, newEdition:false, newWeek:null };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:true, weekUrl:null, weekLabel:null, weekList:null, q:"", lastTopic:null, newEdition:false, newWeek:null };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
-const formsPills = (arr) => arr.map(f=>{const x=FORMATIONS_ALL[f]||FORMATIONS[f]||{c:'',n:f}; return `<span class="fpill ${x.c}">${x.n}</span>`;}).join('');
 const tClass = s => s.multi ? "t-multi" : (CONFLICT_CLASS[s.conflict]||"t-multi");
 const tCode = s => s.multi ? "MULTI" : (CONFLICT_CODE[s.conflict]||"—");
 const panelCls = s => tClass(s) + (s.image ? " has-img" : "");
@@ -1543,26 +1529,20 @@ function serialsFilterBar(){
   const f = state.serialFilter || 'ALL';
   const chips = `<button class="serchip${f==='ALL'?' on':''}" data-filter="ALL">All</button>`
     + PACKAGES.map(p=>`<button class="serchip${f===p.k?' on':''}${p.live?'':' off'}" data-filter="${p.k}"${p.live?'':' disabled'}>${p.label}</button>`).join('');
-  const ff = state.serialFormation || 'ALL';
-  const fchips = `<span class="facet-lbl">Formation</span><button class="serchip${ff==='ALL'?' on':''}" data-fform="ALL">All</button>`
-    + Object.keys(FORMATIONS_ALL).map(k=>`<button class="serchip${ff===k?' on':''}" data-fform="${k}">${FORMATIONS_ALL[k].n}</button>`).join('');
-  return `<div class="serfilter">${chips}</div><div class="serfilter">${fchips}</div>`;
+  return `<div class="serfilter">${chips}</div>`;
 }
 function renderSerials(){
   const c = $("#serialsContent");
   const f = state.serialFilter || 'ALL';
-  const ff = state.serialFormation || 'ALL';
   let list = ALL_SERIALS.slice();
   if(f!=='ALL') list = list.filter(s=>PKG_OF[s.id]===f);
-  if(ff!=='ALL') list = list.filter(s=>s.formations.includes(ff));
   if(state.savedOnly) list = list.filter(s=>state.saved.has(s.id));
   const title = state.savedOnly ? 'Saved' : 'Serials';
-  const forLbl = ff!=='ALL' ? ` for ${(FORMATIONS_ALL[ff]||{}).n}` : '';
   const sub = state.savedOnly
     ? `${list.length} serial${list.length===1?'':'s'} saved`
     : (f==='ALL'
-        ? `${ff==='ALL'?'All ':''}${list.length} serial${list.length===1?'':'s'}${forLbl} · June 2026`
-        : `${list.length} ${(PACKAGES.find(x=>x.k===f)||{}).label} serial${list.length===1?'':'s'}${forLbl} · June 2026`);
+        ? `All ${list.length} serial${list.length===1?'':'s'} · June 2026`
+        : `${list.length} ${(PACKAGES.find(x=>x.k===f)||{}).label} serial${list.length===1?'':'s'} · June 2026`);
   let html = `<h1 class="section-title" style="font-size:28px;padding:18px 16px 2px">${title}</h1>`
     + `<div class="theatre-sub" style="padding-bottom:8px">${sub}</div>`
     + serialsFilterBar();
@@ -1678,7 +1658,6 @@ function detailHTML(s){
     <div class="dwrap">
       <div class="dkicker"><span class="vdot ${s.verdict}"></span><span class="sid">SER ${s.id}</span><span>${KIND_LABEL[s.kind]}</span><span>·</span><span>${s.theatre}${s.multi?" · multi-theatre":""}</span>${s.dates?`<span>·</span><span>${s.dates}</span>`:''}</div>
       <h1>${s.title}</h1>
-      <div class="dforms">${formsPills(s.formations)}</div>
       <div class="conf ${s.sources.length>=2?'ok':'lone'}"><i></i>${s.sources.length>=2?`Corroborated · ${s.sources.length} open sources`:'Single open source'} · first-cut analysis — calibrate before adoption</div>
       ${blocks}
       <div class="appwrap">
@@ -2002,14 +1981,9 @@ function _vvUpd(){ const vv=window.visualViewport; if(!vv) return;
 function scrollHome(){ const m=$("#scroll"); if(m) m.scrollTop=0; const d=$("#detail"); if(d) d.scrollTop=0; }
 /* "my formation": set once (either filter), remembered on-device, and used to
    scope Serials, Ask answers and the tailored decision line. */
-function setMyFormation(v){
-  state.fFormation=v; state.serialFormation=v;
-  try{ localStorage.setItem('csi-formation', v); }catch(e){}
-}
 function init(){
   buildMerged();
   loadPackage(state.tab);
-  try{ const mf=localStorage.getItem('csi-formation'); if(mf && (mf==='ALL' || FORMATIONS_ALL[mf])){ state.fFormation=mf; state.serialFormation=mf; } }catch(e){}
   buildTabs(); renderFeed(); renderSerials();
   if(window.visualViewport){ visualViewport.addEventListener('resize', _vvUpd); visualViewport.addEventListener('scroll', _vvUpd); _vvUpd(); }
   window.addEventListener('resize', _vvUpd);
@@ -2065,8 +2039,6 @@ function init(){
   $("#serialsContent").addEventListener('click', e=>{
     const fl = e.target.closest('[data-filter]');
     if(fl && !fl.disabled){ state.serialFilter = fl.dataset.filter; renderSerials(); scrollHome(); return; }
-    const fm = e.target.closest('[data-fform]');
-    if(fm){ setMyFormation(fm.dataset.fform); renderSerials(); scrollHome(); return; }
     const bm = e.target.closest('[data-bm]');
     if(bm){ e.stopPropagation(); toggleSave(bm.dataset.bm); flashSaved(bm); return; }
     const card = e.target.closest('[data-id]');
