@@ -161,6 +161,19 @@ a{color:inherit}
 .weekly .th-sub{font-family:var(--body);font-size:13px;color:var(--text-2);margin-top:4px;line-height:1.35}
 .weekly .wk-item{margin:0 0 20px}
 .weekly .wk-item:last-child{margin-bottom:10px}
+/* collapsible reader — section folds and per-development folds */
+.weekly .wk-sec-toggle{cursor:pointer;display:flex;align-items:center;gap:9px}
+.weekly .wk-sec-toggle .wk-caret{margin-left:auto;flex:0 0 auto;font-family:var(--mono);font-size:15px;font-weight:400;color:var(--text-3);line-height:1}
+.weekly .wk-sec.wk-collapsed .wk-sec-body{display:none}
+.weekly .wk-dev{border-top:1px solid var(--line);padding:13px 0}
+.weekly .theatre-card .wk-dev:first-of-type{border-top:none;padding-top:4px}
+.weekly .wk-dev-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 9px;width:100%;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit;-webkit-appearance:none}
+.weekly .wk-dev-cat{flex:0 0 100%}
+.weekly .wk-dev-cat .pill{margin-bottom:8px}
+.weekly .wk-dev-head{flex:1 1 auto;font-family:var(--disp);font-weight:700;font-size:15px;line-height:1.28;color:var(--text)}
+.weekly .wk-dev-top .wk-caret{flex:0 0 auto;margin-left:auto;font-family:var(--mono);font-size:15px;color:var(--text-3);line-height:1.2}
+.weekly .wk-dev.wk-collapsed .wk-dev-body{display:none}
+.weekly .wk-dev-body{margin-top:10px}
 .weekly .pill{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-2);background:var(--surface-2);border:1px solid var(--line-2);border-radius:20px;padding:4px 10px;margin:0 6px 9px 0}
 .weekly .wk-strong{color:var(--text);font-weight:700}
 .weekly .theatre-card .wk-strong,.weekly .wk-panel .wk-strong{display:block;font-family:var(--disp);font-size:15.5px;line-height:1.28;margin:1px 0 7px}
@@ -1961,7 +1974,48 @@ function bindWeekHead(){ const b=$("#wkChange"); if(b) b.onclick=(e)=>{ e.stopPr
    PRESERVE that whitelist of structural classes (re-styled in the app palette via
    the .weekly rules), map bold headline utilities to .wk-strong, and strip only
    the presentational noise (utility classes, inline dark-theme styles, ids). */
-const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong']);
+const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong','wk-dev','wk-dev-top','wk-dev-cat','wk-dev-head','wk-dev-body','wk-caret','wk-sec','wk-sec-body','wk-sec-toggle','wk-collapsed']);
+/* Rebuild each theatre card into collapsible developments: a headline row (with
+   its category pill) that folds its detail paragraph + implication away behind a
+   +/− toggle. Atoms are read in document order so the varied source nesting
+   (some devs wrapped, some flat) groups the same way. Runs before the strip. */
+function _wkCollapseDevs(wrap, doc){
+  wrap.querySelectorAll('.theatre-card').forEach(card=>{
+    const hdr = card.querySelector('.th-hdr');
+    const atoms = Array.from(card.querySelectorAll('span.pill, div.font-semibold, p, div.pl-4'));
+    const units=[]; let cur=null, pend=null;
+    atoms.forEach(a=>{
+      if(a.matches('div.font-semibold')){ cur={pill:pend, head:a, body:[]}; pend=null; units.push(cur); }
+      else if(a.matches('span.pill')){ pend=a; }
+      else if(cur){ cur.body.push(a); }
+    });
+    if(!units.length) return;
+    card.innerHTML=''; if(hdr) card.appendChild(hdr);
+    units.forEach(u=>{
+      const dev=doc.createElement('div'); dev.className='wk-dev wk-collapsed';
+      const top=doc.createElement('button'); top.type='button'; top.className='wk-dev-top';
+      if(u.pill){ const cat=doc.createElement('div'); cat.className='wk-dev-cat'; cat.appendChild(u.pill.cloneNode(true)); top.appendChild(cat); }
+      const hd=doc.createElement('span'); hd.className='wk-dev-head'; hd.innerHTML=u.head.innerHTML; top.appendChild(hd);
+      const car=doc.createElement('span'); car.className='wk-caret'; car.textContent='+'; top.appendChild(car);
+      const body=doc.createElement('div'); body.className='wk-dev-body';
+      u.body.forEach(n=>body.appendChild(n.cloneNode(true)));
+      dev.appendChild(top); dev.appendChild(body); card.appendChild(dev);
+    });
+  });
+}
+/* Fold each section behind its heading; BLUF stays open, the rest collapse. */
+function _wkCollapseSections(wrap, doc){
+  wrap.querySelectorAll('section').forEach(sec=>{
+    const h=sec.querySelector('h2'); if(!h) return;
+    const open=/BLUF/i.test(h.textContent||'');
+    const body=doc.createElement('div'); body.className='wk-sec-body';
+    let n=h.nextSibling; while(n){ const nx=n.nextSibling; body.appendChild(n); n=nx; }
+    sec.appendChild(body);
+    sec.classList.add('wk-sec'); if(!open) sec.classList.add('wk-collapsed');
+    h.classList.add('wk-sec-toggle');
+    const car=doc.createElement('span'); car.className='wk-caret'; car.textContent=open?'–':'+'; h.appendChild(car);
+  });
+}
 function reflowBrief(htmlString){
   const doc = new DOMParser().parseFromString(htmlString, "text/html");
   let sections = Array.from(doc.querySelectorAll('section'));
@@ -1969,16 +2023,15 @@ function reflowBrief(htmlString){
   if(!sections.length) return `<div class="wk-src">Source: <a href="${WEEKLY_BASE}${state.weekUrl==='/'?'/':state.weekUrl}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div><div class="wk-msg"><p>No readable content found.</p></div>`;
   const wrap = doc.createElement('div');
   sections.forEach(sec=>wrap.appendChild(sec.cloneNode(true)));
-  // structural tagging (needs original classes, so do it before the strip pass)
-  wrap.querySelectorAll('.theatre-card').forEach(card=>{
-    Array.from(card.children).forEach(ch=>{
-      if(ch.classList && ch.classList.contains('th-hdr')) return;
-      ch.classList.add('wk-body');
-      Array.from(ch.children).forEach(it=>it.classList && it.classList.add('wk-item'));
-    });
+  // drop the weekly site's own feedback form — the app collects feedback in About
+  wrap.querySelectorAll('section').forEach(sec=>{
+    if(sec.querySelector('a[href*="form.gov"]') || /feedback\s*&?\s*reflection|share your (feedback|thoughts)/i.test(sec.textContent||'')) sec.remove();
   });
+  // structural tagging (needs original classes, so do it before the strip pass)
   wrap.querySelectorAll('h2').forEach(h=>{ if(/BLUF/i.test(h.textContent||'')){ const d=h.nextElementSibling; if(d) d.classList.add('wk-bluf'); } });
   wrap.querySelectorAll('[class*="bg-panel"]').forEach(d=>d.classList.add('wk-panel'));
+  _wkCollapseDevs(wrap, doc);      // per-development folds inside theatre cards
+  _wkCollapseSections(wrap, doc);  // per-section folds (heading toggles)
   // strip pass: keep only whitelisted structure, drop utilities/styles/ids
   wrap.querySelectorAll('*').forEach(el=>{
     const orig = (el.getAttribute('class')||'').split(/\s+/).filter(Boolean);
@@ -2059,6 +2112,10 @@ function init(){
 
   // feed taps (delegation)
   $("#feedContent").addEventListener('click', e=>{
+    const st = e.target.closest('.wk-sec-toggle');
+    if(st){ const sec=st.closest('.wk-sec'); if(sec){ const col=sec.classList.toggle('wk-collapsed'); const c=st.querySelector('.wk-caret'); if(c) c.textContent=col?'+':'–'; } return; }
+    const dt = e.target.closest('.wk-dev-top');
+    if(dt){ const dev=dt.closest('.wk-dev'); if(dev){ const col=dev.classList.toggle('wk-collapsed'); const c=dt.querySelector('.wk-caret'); if(c) c.textContent=col?'+':'–'; } return; }
     const ow = e.target.closest('[data-openweek]');
     if(ow){ e.preventDefault(); goWeekly(); return; }
     const bm = e.target.closest('[data-bm]');
