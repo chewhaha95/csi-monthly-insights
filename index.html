@@ -394,7 +394,14 @@ a{color:inherit}
 .miss-row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:13px;color:var(--ink);padding:7px 0;border-bottom:1px solid var(--line)}
 .miss-row small{font-family:var(--mono);font-size:9.5px;color:var(--text-3);flex:0 0 auto}
 .miss-row.none{color:var(--text-3);border-bottom:none}
-.miss-actions{display:flex;gap:8px}
+.miss-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fb-form{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.fb-input{width:100%;max-width:100%;box-sizing:border-box;font-family:var(--body);font-size:14px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;line-height:1.5}
+.fb-input:focus{outline:none;border-color:var(--red)}
+textarea.fb-input{resize:vertical;min-height:64px}
+.fb-status{font-family:var(--mono);font-size:11px;letter-spacing:.02em;color:var(--text-3)}
+.fb-status.ok{color:var(--green)}
+.fb-status.err{color:var(--red)}
 .facet-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 10px;align-items:center}
 .facet-row::-webkit-scrollbar{display:none}
 .facet-lbl{flex:0 0 auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin-right:2px}
@@ -772,7 +779,17 @@ a{color:inherit}
         <div class="ab-h">Assistant gaps — on this device</div>
         <p>Questions the Ask assistant could not answer, kept only on this device. Share them with the editors to shape the next edition.</p>
         <div id="missList" class="miss-list"></div>
-        <div class="miss-actions"><button class="serchip" id="missCopy">Copy list</button><button class="serchip" id="missClear">Clear</button></div>
+        <div class="miss-actions"><button class="serchip" id="missSend">Send to editors</button><button class="serchip" id="missCopy">Copy list</button><button class="serchip" id="missClear">Clear</button></div>
+        <div id="missStatus" class="fb-status"></div>
+      </div>
+      <div class="about-block">
+        <div class="ab-h">Feedback to the editors</div>
+        <p>Tell the editors what's useful, what's missing, or what to cover next edition. Non-classified only — this goes straight to the editors.</p>
+        <form id="fbForm" class="fb-form" autocomplete="off">
+          <textarea id="fbMsg" class="fb-input" rows="3" maxlength="4000" placeholder="What worked, what's missing, what to add…" aria-label="Feedback to the editors"></textarea>
+          <input id="fbContact" class="fb-input" type="text" maxlength="200" placeholder="How to reach you (optional)" aria-label="Contact (optional)">
+          <div class="miss-actions"><button type="submit" class="serchip" id="fbSend">Send feedback</button><span id="fbStatus" class="fb-status"></span></div>
+        </form>
       </div>
       <div class="about-block">
         <div class="ab-h">Source feed — the weekly brief</div>
@@ -797,7 +814,7 @@ a{color:inherit}
       </div>
       <div class="about-block">
         <div class="ab-h">The five theatres</div>
-        <p>The weekly brief tracks <b>Russia–Ukraine</b>, <b>Israel–Lebanon</b>, <b>Israel–Gaza</b>, <b>Israel–US–Iran</b>, <b>Thailand–Cambodia</b> and <b>Sudan</b>. This edition's serials, across all four packages, draw from Russia–Ukraine, Israel–Lebanon, Israel–Gaza, Thailand–Cambodia and Sudan; Israel–US–Iran is tracked weekly but yielded no serial this edition.</p>
+        <p>The weekly brief tracks <b>Russia–Ukraine</b>, <b>Israel–Lebanon</b>, <b>Israel–Gaza</b>, <b>Israel–US–Iran</b> and <b>Thailand–Cambodia</b>. This edition's serials, across all four packages, draw from Russia–Ukraine, Israel–Lebanon, Israel–Gaza and Thailand–Cambodia; Israel–US–Iran is tracked weekly but yielded no serial this edition.</p>
       </div>
       <div class="caveat-box">
         <p><b>Analyst review required before promulgation.</b> Outcome verdicts reflect open-source reporting at time of writing and may revise as events develop. Verify against current staff assessments and apply judgement before use.</p>
@@ -1319,9 +1336,16 @@ function renderMisses(){
   el.innerHTML = arr.length
     ? arr.slice().reverse().map(x=>`<div class="miss-row"><span>${esc(x.q)}</span><small>${x.t}</small></div>`).join('')
     : `<div class="miss-row none">None yet — unanswered questions will collect here.</div>`;
-  const c=$("#missCopy"), k=$("#missClear");
+  const c=$("#missCopy"), k=$("#missClear"), s=$("#missSend");
   if(c) c.style.display = arr.length? '':'none';
   if(k) k.style.display = arr.length? '':'none';
+  if(s) s.style.display = arr.length? '':'none';
+}
+/* POST feedback / gap reports to the editor's KV store (functions/api/feedback.js) */
+async function _postFeedback(payload){
+  const res = await fetch('/api/feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return res.json();
 }
 function renderAskPane(){
   const ex=$("#askExamples"); if(ex) ex.innerHTML=ASK_EXAMPLES.map(x=>`<button class="serchip ex" data-ask="${esc(x)}">${x}</button>`).join('');
@@ -2064,6 +2088,28 @@ function init(){
     const text='Ask assistant — unanswered questions (June 2026 edition)\n'+arr.map(x=>`${x.t} — ${x.q}`).join('\n');
     if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>{ _mc.textContent='Copied ✓'; setTimeout(()=>{ _mc.textContent='Copy list'; },1400); }).catch(()=>{}); } };
   const _mk=$("#missClear"); if(_mk) _mk.onclick=()=>{ try{ localStorage.removeItem('csi-misses'); }catch(e){} renderMisses(); };
+  const _ms=$("#missSend"); if(_ms) _ms.onclick=async()=>{
+    const arr=_getMisses(); if(!arr.length) return;
+    const st=$("#missStatus"); _ms.disabled=true; if(st){ st.textContent='Sending…'; st.className='fb-status'; }
+    try{
+      await _postFeedback({ kind:'gaps', message: arr.map(x=>`- ${x.q} (${x.t})`).join('\n'), meta:{ edition: EDITION_ID, count: arr.length } });
+      if(st){ st.textContent='Sent to the editors — thanks.'; st.className='fb-status ok'; }
+    }catch(e){ if(st){ st.textContent="Couldn't send — check your connection and retry."; st.className='fb-status err'; } }
+    finally{ _ms.disabled=false; }
+  };
+  const _fb=$("#fbForm"); if(_fb) _fb.onsubmit=async(e)=>{
+    e.preventDefault();
+    const msg=($("#fbMsg").value||'').trim(), st=$("#fbStatus"), btn=$("#fbSend");
+    if(!msg){ if(st){ st.textContent='Type something first.'; st.className='fb-status err'; } return; }
+    const contact=($("#fbContact").value||'').trim();
+    if(btn) btn.disabled=true; if(st){ st.textContent='Sending…'; st.className='fb-status'; }
+    try{
+      await _postFeedback({ kind:'feedback', message: msg, contact, meta:{ edition: EDITION_ID } });
+      $("#fbMsg").value=''; $("#fbContact").value='';
+      if(st){ st.textContent='Thanks — sent to the editors.'; st.className='fb-status ok'; }
+    }catch(err){ if(st){ st.textContent="Couldn't send — check your connection and retry."; st.className='fb-status err'; } }
+    finally{ if(btn) btn.disabled=false; }
+  };
   $("#btnSaved").onclick = ()=>{ if(state.section!=="serials") showSection("serials"); state.savedOnly=!state.savedOnly; updateSavedIcon(); renderSerials(); scrollHome(); };
   $("#logoHome").onclick = ()=>{ state.savedOnly=false; updateSavedIcon(); showSection('feed'); renderFeed(); };
   $("#logoHome").onkeydown = (e)=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); $("#logoHome").click();} };

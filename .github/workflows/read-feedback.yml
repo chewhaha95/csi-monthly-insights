@@ -1,0 +1,37 @@
+name: Read feedback
+
+# Manual trigger only — run this from the Actions tab to pull in-app feedback and
+# Ask-assistant gap reports collected by /api/feedback. Output is written to the
+# run summary. Set "purge" to true to delete everything after reading.
+# Requires a repo secret NOTIFY_TOKEN matching the Pages NOTIFY_TOKEN variable.
+
+on:
+  workflow_dispatch:
+    inputs:
+      purge:
+        description: 'Delete all feedback after reading'
+        type: boolean
+        default: false
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch feedback
+        run: |
+          if [ -z "${{ secrets.NOTIFY_TOKEN }}" ]; then
+            echo "NOTIFY_TOKEN secret not set — skipping."; exit 0
+          fi
+          Q=""
+          if [ "${{ inputs.purge }}" = "true" ]; then Q="?purge=1"; fi
+          code=$(curl -sS -o /tmp/fb.json -w '%{http_code}' \
+            -H "X-Notify-Token: ${{ secrets.NOTIFY_TOKEN }}" \
+            "https://csi-monthly-insights.pages.dev/api/feedback${Q}")
+          echo "HTTP $code"
+          {
+            echo "## In-app feedback";
+            echo '```json';
+            cat /tmp/fb.json 2>/dev/null || echo '{}';
+            echo '```';
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$code" = "200" ]
