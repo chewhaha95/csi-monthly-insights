@@ -28,6 +28,10 @@ jobs:
             -H "X-Notify-Token: ${{ secrets.NOTIFY_TOKEN }}" \
             "https://csi-monthly-insights.pages.dev/api/feedback${Q}")
           echo "HTTP $code"
+          echo "----- feedback -----"
+          cat /tmp/fb.json 2>/dev/null || echo '{}'
+          echo
+          echo "--------------------"
           {
             echo "## In-app feedback";
             echo '```json';
