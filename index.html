@@ -2129,6 +2129,15 @@ function init(){
     }catch(err){ if(st){ st.textContent="Couldn't send — check your connection and retry."; st.className='fb-status err'; } }
     finally{ if(btn) btn.disabled=false; }
   };
+  // The feedback fields live in the scroller (not docked like the Ask box), so
+  // iOS won't lift them above the keyboard on its own. On focus: hide the nav,
+  // pin the shell to the visual viewport, and scroll the field into the visible
+  // band above the keyboard (re-run as the keyboard finishes animating).
+  ['#fbMsg','#fbContact'].forEach(sel=>{ const el=$(sel); if(!el) return; const _app=document.querySelector('.app');
+    const bring=()=>{ try{ el.scrollIntoView({block:'center'}); }catch(e){ try{ el.scrollIntoView(); }catch(_){} } };
+    el.addEventListener('focus', ()=>{ _app.classList.add('kbd'); _vvUpd(); setTimeout(bring,150); setTimeout(bring,420); });
+    el.addEventListener('blur', ()=>{ _app.classList.remove('kbd'); _vvUpd(); });
+  });
   $("#btnSaved").onclick = ()=>{ if(state.section!=="serials") showSection("serials"); state.savedOnly=!state.savedOnly; updateSavedIcon(); renderSerials(); scrollHome(); };
   $("#logoHome").onclick = ()=>{ state.savedOnly=false; updateSavedIcon(); showSection('feed'); renderFeed(); };
   $("#logoHome").onkeydown = (e)=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); $("#logoHome").click();} };
