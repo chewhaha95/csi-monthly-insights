@@ -222,6 +222,11 @@ a{color:inherit}
 .pop p b{color:var(--text)}
 .bell-new{background:var(--red);color:#fff;border-radius:8px;padding:9px 11px;margin-bottom:11px;font-size:12.5px;line-height:1.4}
 .bell-new b{color:#fff}
+.notify-btn{width:100%;font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:8px;padding:10px;cursor:pointer}
+.notify-btn:hover{border-color:var(--red);color:var(--red)}
+.notify-btn[data-on="1"]{color:var(--green);border-color:var(--green)}
+.notify-btn:disabled{opacity:.55;cursor:default}
+.notify-hint{color:var(--text-3);font-size:11px;margin:8px 0 0}
 
 /* ============ SCROLL AREA ============ */
 .scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;position:relative;padding-bottom:24px}
@@ -724,13 +729,6 @@ a{color:inherit}
       <div class="tabs-fade"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>
     </div>
 
-    <div class="pop" id="bellPop">
-      <div id="bellNew" class="bell-new" style="display:none"></div>
-      <h4>Edition · Jun 2026</h4>
-      <p><b id="popCount">… serials</b> <span id="popScope">across all four packages.</span></p>
-      <p>Handling: <b>Open source · training use</b>.</p>
-      <p style="color:var(--text-3);margin-bottom:0">AI-distilled — analyst review required before promulgation.</p>
-    </div>
   </header>
 
   <!-- ============ FEED + STATIC PANES ============ -->
@@ -851,6 +849,16 @@ a{color:inherit}
 
   <div class="scrim" id="scrim"></div>
   <div class="pop weekpop" id="weekPop" role="listbox" aria-label="Select a week"></div>
+  <!-- bell popover lives here (sibling of the scrim) so it stacks above it and its button is tappable -->
+  <div class="pop" id="bellPop">
+    <div id="bellNew" class="bell-new" style="display:none"></div>
+    <h4>Edition · Jun 2026</h4>
+    <p><b id="popCount">… serials</b> <span id="popScope">across all four packages.</span></p>
+    <p>Handling: <b>Open source · training use</b>.</p>
+    <p style="color:var(--text-3);margin-bottom:9px">AI-distilled — analyst review required before promulgation.</p>
+    <button id="notifyBtn" class="notify-btn" style="display:none"></button>
+    <p id="notifyHint" class="notify-hint" style="display:none">On iPhone, add the app to the Home Screen first, then open it from there.</p>
+  </div>
 </div>
 
 <script src="data.js"></script>
@@ -1771,6 +1779,43 @@ async function _checkNewWeek(){
   _updateBellDot();
 }
 function _updateBellDot(){ const b=$("#btnBell"); if(b) b.classList.toggle('has-dot', !!(state.newEdition || state.newWeek)); }
+
+/* ---- Web Push opt-in (option: notify me of new briefs) ---- */
+const VAPID_PUBLIC = 'BG1CmTnY25ujCrZxcWLIlHYqre6M1RXk-C3alm7yVv5lsxCLyscVcJwdfYZtTX_-8SEgJFZj47GfZ7z7FAfQeUE';
+function _urlB64ToU8(b){ const pad='='.repeat((4-b.length%4)%4); const s=(b+pad).replace(/-/g,'+').replace(/_/g,'/'); const raw=atob(s); return Uint8Array.from([...raw].map(c=>c.charCodeAt(0))); }
+const _pushOK = ()=> ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+async function _notifyState(){
+  const btn=$("#notifyBtn"), hint=$("#notifyHint"); if(!btn) return;
+  if(!_pushOK()){ btn.style.display='none'; if(hint) hint.style.display=''; return; }
+  btn.style.display='';
+  try{
+    if(Notification.permission==='denied'){ btn.textContent='Notifications blocked in settings'; btn.disabled=true; btn.dataset.on='0'; if(hint) hint.style.display='none'; return; }
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    btn.disabled=false;
+    btn.dataset.on = sub ? '1':'0';
+    btn.textContent = sub ? 'Notifications on — tap to turn off' : 'Notify me of new briefs';
+    if(hint) hint.style.display = sub ? 'none' : '';
+  }catch(e){ btn.style.display='none'; }
+}
+async function _toggleNotify(){
+  const btn=$("#notifyBtn"); if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(sub){
+      try{ await fetch('/api/subscribe',{method:'DELETE',headers:{'content-type':'application/json'},body:JSON.stringify(sub)}); }catch(e){}
+      await sub.unsubscribe();
+    } else {
+      const perm=await Notification.requestPermission();
+      if(perm==='granted'){
+        sub=await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:_urlB64ToU8(VAPID_PUBLIC)});
+        await fetch('/api/subscribe',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(sub)});
+      }
+    }
+  }catch(e){}
+  _notifyState();
+}
 function _ackFreshness(){
   try{ localStorage.setItem('csi-seen-edition', EDITION_ID);
     if(state.newWeek) localStorage.setItem('csi-seen-week', state.newWeek);
@@ -1795,6 +1840,7 @@ function togglePop(){
       } else nw.style.display='none';
     }
     _ackFreshness(); // acknowledge: clear the dot; the notice stays visible until closed
+    _notifyState();  // refresh the notify button each time the popover opens
   }
   const on=pop.classList.toggle('on'); $("#scrim").classList.toggle('on', on);
   if(!on){ const nw=$("#bellNew"); if(nw) nw.style.display='none'; }
@@ -2029,6 +2075,7 @@ function init(){
 
   // top bar
   $("#btnBell").onclick = (e)=>{ e.stopPropagation(); togglePop(); };
+  { const nb=$("#notifyBtn"); if(nb) nb.onclick=(e)=>{ e.stopPropagation(); _toggleNotify(); }; }
   _initFreshness(); _checkNewWeek(); // new-edition / new-weekly indicator (best-effort)
   $("#btnTheme").onclick = toggleTheme; updateThemeIcon();
   const _mc=$("#missCopy"); if(_mc) _mc.onclick=()=>{ const arr=_getMisses(); if(!arr.length) return;

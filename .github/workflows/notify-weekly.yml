@@ -1,0 +1,26 @@
+name: Weekly new-brief push
+
+# Fires the /api/notify endpoint so subscribed devices get a "new brief" push.
+# Runs weekly, and can be run on demand from the Actions tab.
+# Requires a repo secret NOTIFY_TOKEN matching the Pages NOTIFY_TOKEN variable.
+
+on:
+  schedule:
+    # 01:00 UTC every Monday — adjust to your publishing cadence.
+    - cron: '0 1 * * 1'
+  workflow_dispatch: {}
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger push broadcast
+        run: |
+          if [ -z "${{ secrets.NOTIFY_TOKEN }}" ]; then
+            echo "NOTIFY_TOKEN secret not set — skipping."; exit 0
+          fi
+          code=$(curl -sS -o /tmp/resp -w '%{http_code}' -X POST \
+            -H "X-Notify-Token: ${{ secrets.NOTIFY_TOKEN }}" \
+            https://csi-monthly-insights.pages.dev/api/notify)
+          echo "HTTP $code"; cat /tmp/resp; echo
+          [ "$code" = "200" ]
