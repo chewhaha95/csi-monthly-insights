@@ -132,14 +132,10 @@ a{color:inherit}
 .weekly table{width:100%;border-collapse:collapse;font-family:var(--body);font-size:12.5px;margin:4px 0 12px}
 .weekly th,.weekly td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top;color:var(--text-2)}
 .weekly th{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);background:var(--surface-2)}
-.weekly .wk-tcards{margin:6px 0 16px;display:flex;flex-direction:column;gap:10px}
-.weekly .wk-tcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.weekly .wk-tc-title{font-family:var(--disp);font-weight:700;font-size:15.5px;line-height:1.25;color:var(--text);margin:0 0 8px}
-.weekly .wk-tc-row{display:flex;gap:12px;padding:7px 0;border-top:1px solid var(--line)}
-.weekly .wk-tc-row:first-of-type{border-top:none}
-.weekly .wk-tc-k{flex:0 0 76px;font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);padding-top:3px}
-.weekly .wk-tc-v{flex:1;min-width:0;font-family:var(--body);font-size:13.5px;line-height:1.5;color:var(--text-2)}
-.weekly .wk-tc-v .ph{margin:0}
+.weekly .wk-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:4px 0 12px}
+.weekly .wk-scroll table{margin:0}
+.weekly .wk-scroll.wide table{min-width:700px}
+.weekly .wk-scroll td:first-child{white-space:nowrap}
 .weekly .wk-src{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--text-3);margin:0 0 18px}
 .weekly .wk-src a{color:var(--text-3)}
 .weekly .wk-msg{padding:36px 8px;text-align:center}
@@ -1914,7 +1910,7 @@ function bindWeekHead(){ const b=$("#wkChange"); if(b) b.onclick=(e)=>{ e.stopPr
    PRESERVE that whitelist of structural classes (re-styled in the app palette via
    the .weekly rules), map bold headline utilities to .wk-strong, and strip only
    the presentational noise (utility classes, inline dark-theme styles, ids). */
-const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong']);
+const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong','wk-scroll','wide']);
 function reflowBrief(htmlString){
   const doc = new DOMParser().parseFromString(htmlString, "text/html");
   let sections = Array.from(doc.querySelectorAll('section'));
@@ -1947,30 +1943,13 @@ function reflowBrief(htmlString){
     if(el.tagName==='IMG'){ const s=el.getAttribute('src'); if(s && !/^https?:|^data:/i.test(s)) el.setAttribute('src', WEEKLY_BASE + (s.startsWith('/')?s:'/'+s)); }
     if(el.tagName==='SCRIPT'||el.tagName==='STYLE'||el.tagName==='LINK') el.remove();
   });
-  // Wide tables (e.g. the conflict status chart) don't fit a phone. Rebuild
-  // each row as a stacked card — first column as the heading, the rest as
-  // labelled rows — so it fits the screen with no sideways scroll, matching
-  // the rest of the brief's card layout.
+  // Wide tables (e.g. the conflict status chart) lose their source scroll
+  // wrapper and min-width in the strip pass — restore both so columns keep
+  // their alignment and the table scrolls inside its own container.
   wrap.querySelectorAll('table').forEach(t=>{
-    const heads = Array.from(t.querySelectorAll('thead th, tr:first-child th')).map(h=>(h.textContent||'').trim());
-    let rows = Array.from(t.querySelectorAll('tbody tr'));
-    if(!rows.length) rows = Array.from(t.querySelectorAll('tr')).slice(heads.length?1:0);
-    if(!rows.length) return;
-    const cont = doc.createElement('div'); cont.className='wk-tcards';
-    rows.forEach(r=>{
-      const cells = Array.from(r.children); if(!cells.length) return;
-      const card = doc.createElement('div'); card.className='wk-tcard';
-      const title = doc.createElement('div'); title.className='wk-tc-title'; title.innerHTML=cells[0].innerHTML; card.appendChild(title);
-      for(let i=1;i<cells.length;i++){
-        if(!(cells[i].textContent||'').trim() && !cells[i].querySelector('*')) continue;
-        const row=doc.createElement('div'); row.className='wk-tc-row';
-        const k=doc.createElement('span'); k.className='wk-tc-k'; k.textContent=heads[i]||'';
-        const v=doc.createElement('span'); v.className='wk-tc-v'; v.innerHTML=cells[i].innerHTML;
-        row.appendChild(k); row.appendChild(v); card.appendChild(row);
-      }
-      cont.appendChild(card);
-    });
-    t.parentNode.insertBefore(cont, t); t.remove();
+    const cols = t.querySelectorAll('tr:first-child th, tr:first-child td').length;
+    const sc = doc.createElement('div'); sc.className = 'wk-scroll' + (cols>=4?' wide':'');
+    t.parentNode.insertBefore(sc, t); sc.appendChild(t);
   });
   const src = `<div class="wk-src">Source: <a href="${WEEKLY_BASE}${state.weekUrl==='/'?'/':state.weekUrl}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div>`;
   return src + wrap.innerHTML;
