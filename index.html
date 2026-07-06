@@ -174,6 +174,14 @@ a{color:inherit}
 .weekly .wk-dev-top .wk-caret{flex:0 0 auto;margin-left:auto;font-family:var(--mono);font-size:15px;color:var(--text-3);line-height:1.2}
 .weekly .wk-dev.wk-collapsed .wk-dev-body{display:none}
 .weekly .wk-dev-body{margin-top:10px}
+/* latest-brief preview mode: show a few clamped sentences, expand from a button below */
+.weekly .wk-dev.wk-preview .wk-dev-head{display:block}
+.weekly .wk-dev.wk-preview.wk-collapsed .wk-dev-body{display:block}
+.weekly .wk-dev.wk-preview.wk-collapsed .wk-dev-body>p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:0}
+.weekly .wk-dev.wk-preview.wk-collapsed .wk-dev-body>:not(p){display:none}
+.weekly .wk-dev-more,.weekly .wk-chart-more{display:inline-block;margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);background:none;border:0;padding:2px 0;cursor:pointer;-webkit-appearance:none}
+.weekly .wk-chart-more{margin:11px 0 2px}
+.weekly .wk-chart.wk-collapsed .wk-row-extra{display:none}
 .weekly .pill{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-2);background:var(--surface-2);border:1px solid var(--line-2);border-radius:20px;padding:4px 10px;margin:0 6px 9px 0}
 .weekly .wk-strong{color:var(--text);font-weight:700}
 .weekly .theatre-card .wk-strong,.weekly .wk-panel .wk-strong{display:block;font-family:var(--disp);font-size:15.5px;line-height:1.28;margin:1px 0 7px}
@@ -1974,12 +1982,12 @@ function bindWeekHead(){ const b=$("#wkChange"); if(b) b.onclick=(e)=>{ e.stopPr
    PRESERVE that whitelist of structural classes (re-styled in the app palette via
    the .weekly rules), map bold headline utilities to .wk-strong, and strip only
    the presentational noise (utility classes, inline dark-theme styles, ids). */
-const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong','wk-dev','wk-dev-top','wk-dev-cat','wk-dev-head','wk-dev-body','wk-caret','wk-sec','wk-sec-body','wk-sec-toggle','wk-collapsed']);
+const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong','wk-dev','wk-dev-top','wk-dev-cat','wk-dev-head','wk-dev-body','wk-dev-more','wk-caret','wk-sec','wk-sec-body','wk-sec-toggle','wk-collapsed','wk-preview','wk-chart','wk-chart-more','wk-row-extra']);
 /* Rebuild each theatre card into collapsible developments: a headline row (with
    its category pill) that folds its detail paragraph + implication away behind a
    +/− toggle. Atoms are read in document order so the varied source nesting
    (some devs wrapped, some flat) groups the same way. Runs before the strip. */
-function _wkCollapseDevs(wrap, doc){
+function _wkCollapseDevs(wrap, doc, latest){
   wrap.querySelectorAll('.theatre-card').forEach(card=>{
     const hdr = card.querySelector('.th-hdr');
     const atoms = Array.from(card.querySelectorAll('span.pill, div.font-semibold, p, div.pl-4'));
@@ -1992,25 +2000,55 @@ function _wkCollapseDevs(wrap, doc){
     if(!units.length) return;
     card.innerHTML=''; if(hdr) card.appendChild(hdr);
     units.forEach(u=>{
-      const dev=doc.createElement('div'); dev.className='wk-dev wk-collapsed';
-      const top=doc.createElement('button'); top.type='button'; top.className='wk-dev-top';
-      if(u.pill){ const cat=doc.createElement('div'); cat.className='wk-dev-cat'; cat.appendChild(u.pill.cloneNode(true)); top.appendChild(cat); }
-      const hd=doc.createElement('span'); hd.className='wk-dev-head'; hd.innerHTML=u.head.innerHTML; top.appendChild(hd);
-      const car=doc.createElement('span'); car.className='wk-caret'; car.textContent='+'; top.appendChild(car);
+      const dev=doc.createElement('div');
       const body=doc.createElement('div'); body.className='wk-dev-body';
       u.body.forEach(n=>body.appendChild(n.cloneNode(true)));
-      dev.appendChild(top); dev.appendChild(body); card.appendChild(dev);
+      if(latest){
+        // preview mode: headline + a few clamped sentences, "Read more" below
+        dev.className='wk-dev wk-preview wk-collapsed';
+        if(u.pill){ const cat=doc.createElement('div'); cat.className='wk-dev-cat'; cat.appendChild(u.pill.cloneNode(true)); dev.appendChild(cat); }
+        const hd=doc.createElement('div'); hd.className='wk-dev-head'; hd.innerHTML=u.head.innerHTML; dev.appendChild(hd);
+        dev.appendChild(body);
+        const more=doc.createElement('button'); more.type='button'; more.className='wk-dev-more'; more.textContent='Read more +';
+        dev.appendChild(more);
+      } else {
+        // fold mode: headline row is the toggle, body hidden until expanded
+        dev.className='wk-dev wk-collapsed';
+        const top=doc.createElement('button'); top.type='button'; top.className='wk-dev-top';
+        if(u.pill){ const cat=doc.createElement('div'); cat.className='wk-dev-cat'; cat.appendChild(u.pill.cloneNode(true)); top.appendChild(cat); }
+        const hd=doc.createElement('span'); hd.className='wk-dev-head'; hd.innerHTML=u.head.innerHTML; top.appendChild(hd);
+        const car=doc.createElement('span'); car.className='wk-caret'; car.textContent='+'; top.appendChild(car);
+        dev.appendChild(top);
+        dev.appendChild(body);
+      }
+      card.appendChild(dev);
     });
   });
 }
+/* On the latest brief, preview the Conflict Status Chart: keep the header + the
+   first theatre row visible, hide the rest behind a "Show all theatres" button. */
+function _wkPreviewChart(sec, doc){
+  const rows = Array.from(sec.querySelectorAll('table tbody tr'));
+  sec.classList.add('wk-chart');
+  if(rows.length<=1) return;
+  rows.forEach((r,i)=>{ if(i>0) r.classList.add('wk-row-extra'); });
+  sec.classList.add('wk-collapsed');
+  const more=doc.createElement('button'); more.type='button'; more.className='wk-chart-more';
+  more.setAttribute('data-n', String(rows.length));
+  more.textContent=`Show all ${rows.length} theatres +`;
+  const tbl=sec.querySelector('table');
+  (tbl && tbl.parentNode ? tbl.parentNode : sec).appendChild(more);
+}
 /* Fold each section behind its heading. BLUF and Key Developments stay open by
    default (so all five theatres and their development headlines are visible);
-   Watch Areas is never folded; everything else starts collapsed. */
-function _wkCollapseSections(wrap, doc){
+   Watch Areas is never folded; the Conflict Status Chart previews its first
+   theatre on the latest brief; everything else starts collapsed. */
+function _wkCollapseSections(wrap, doc, latest){
   wrap.querySelectorAll('section').forEach(sec=>{
     const h=sec.querySelector('h2'); if(!h) return;
     const t=h.textContent||'';
     if(/watch area/i.test(t)) return; // always shown — no toggle
+    if(latest && /conflict status/i.test(t)){ _wkPreviewChart(sec, doc); return; }
     const open=/BLUF/i.test(t) || /key development/i.test(t);
     const body=doc.createElement('div'); body.className='wk-sec-body';
     let n=h.nextSibling; while(n){ const nx=n.nextSibling; body.appendChild(n); n=nx; }
@@ -2034,8 +2072,11 @@ function reflowBrief(htmlString){
   // structural tagging (needs original classes, so do it before the strip pass)
   wrap.querySelectorAll('h2').forEach(h=>{ if(/BLUF/i.test(h.textContent||'')){ const d=h.nextElementSibling; if(d) d.classList.add('wk-bluf'); } });
   wrap.querySelectorAll('[class*="bg-panel"]').forEach(d=>d.classList.add('wk-panel'));
-  _wkCollapseDevs(wrap, doc);      // per-development folds inside theatre cards
-  _wkCollapseSections(wrap, doc);  // per-section folds (heading toggles)
+  // Preview-then-expand layout is being trialled on the latest brief only
+  // (weekUrl "/"); older weeks keep the plain fold until the design is approved.
+  const latest = (state.weekUrl==='/' || !state.weekUrl);
+  _wkCollapseDevs(wrap, doc, latest);      // per-development folds inside theatre cards
+  _wkCollapseSections(wrap, doc, latest);  // per-section folds (heading toggles)
   // strip pass: keep only whitelisted structure, drop utilities/styles/ids
   wrap.querySelectorAll('*').forEach(el=>{
     const orig = (el.getAttribute('class')||'').split(/\s+/).filter(Boolean);
@@ -2118,6 +2159,10 @@ function init(){
   $("#feedContent").addEventListener('click', e=>{
     const st = e.target.closest('.wk-sec-toggle');
     if(st){ const sec=st.closest('.wk-sec'); if(sec){ const col=sec.classList.toggle('wk-collapsed'); const c=st.querySelector('.wk-caret'); if(c) c.textContent=col?'+':'–'; } return; }
+    const dm = e.target.closest('.wk-dev-more');
+    if(dm){ const dev=dm.closest('.wk-dev'); if(dev){ const col=dev.classList.toggle('wk-collapsed'); dm.textContent=col?'Read more +':'Show less –'; } return; }
+    const cm = e.target.closest('.wk-chart-more');
+    if(cm){ const sec=cm.closest('.wk-chart'); if(sec){ const col=sec.classList.toggle('wk-collapsed'); cm.textContent=col?('Show all '+(cm.getAttribute('data-n')||'')+' theatres +'):'Show fewer –'; } return; }
     const dt = e.target.closest('.wk-dev-top');
     if(dt){ const dev=dt.closest('.wk-dev'); if(dev){ const col=dev.classList.toggle('wk-collapsed'); const c=dt.querySelector('.wk-caret'); if(c) c.textContent=col?'+':'–'; } return; }
     const ow = e.target.closest('[data-openweek]');
