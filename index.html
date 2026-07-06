@@ -2003,11 +2003,15 @@ function _wkCollapseDevs(wrap, doc){
     });
   });
 }
-/* Fold each section behind its heading; BLUF stays open, the rest collapse. */
+/* Fold each section behind its heading. BLUF and Key Developments stay open by
+   default (so all five theatres and their development headlines are visible);
+   Watch Areas is never folded; everything else starts collapsed. */
 function _wkCollapseSections(wrap, doc){
   wrap.querySelectorAll('section').forEach(sec=>{
     const h=sec.querySelector('h2'); if(!h) return;
-    const open=/BLUF/i.test(h.textContent||'');
+    const t=h.textContent||'';
+    if(/watch area/i.test(t)) return; // always shown — no toggle
+    const open=/BLUF/i.test(t) || /key development/i.test(t);
     const body=doc.createElement('div'); body.className='wk-sec-body';
     let n=h.nextSibling; while(n){ const nx=n.nextSibling; body.appendChild(n); n=nx; }
     sec.appendChild(body);
