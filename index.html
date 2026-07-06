@@ -1484,9 +1484,11 @@ function buildTabs(){
         state.weekOpen = true;
         $("#tabs").querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b===btn?'true':'false'));
         if(state.section!=="feed") showSection('feed');
-        // straight to the latest brief — the header's "Change week ▾" opens the picker
+        // renders the latest brief, then drops the week picker off the tab so
+        // users can jump to an older week (same picker as the header's "Change week ▾")
         renderFeed();
         scrollHome();
+        toggleWeekPop(true);
       };
       return;
     }
