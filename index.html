@@ -1986,11 +1986,12 @@ function bindWeekHead(){ const b=$("#wkChange"); if(b) b.onclick=(e)=>{ e.stopPr
    the .weekly rules), map bold headline utilities to .wk-strong, and strip only
    the presentational noise (utility classes, inline dark-theme styles, ids). */
 const _WK_KEEP = new Set(['theatre-card','th-hdr','th-badge','th-name','th-sub','pill','src-group','src-pill','sec-dot','ph','ph-active','ph-cease','wk-body','wk-item','wk-bluf','wk-panel','wk-strong','wk-dev','wk-dev-top','wk-dev-cat','wk-dev-head','wk-dev-body','wk-dev-more','wk-caret','wk-sec','wk-sec-body','wk-sec-toggle','wk-collapsed','wk-preview','wk-chart','wk-chart-more','wk-row-extra']);
-/* Rebuild each theatre card into collapsible developments: a headline row (with
-   its category pill) that folds its detail paragraph + implication away behind a
-   +/− toggle. Atoms are read in document order so the varied source nesting
-   (some devs wrapped, some flat) groups the same way. Runs before the strip. */
-function _wkCollapseDevs(wrap, doc, latest){
+/* Rebuild each theatre card into preview developments: a headline + category
+   pill and a few clamped sentences, with a "Read more" button below that reveals
+   the full paragraph and implication. Atoms are read in document order so the
+   varied source nesting (some devs wrapped, some flat) groups the same way.
+   Runs before the strip. */
+function _wkCollapseDevs(wrap, doc){
   wrap.querySelectorAll('.theatre-card').forEach(card=>{
     const hdr = card.querySelector('.th-hdr');
     const atoms = Array.from(card.querySelectorAll('span.pill, div.font-semibold, p, div.pl-4'));
@@ -2003,38 +2004,25 @@ function _wkCollapseDevs(wrap, doc, latest){
     if(!units.length) return;
     card.innerHTML=''; if(hdr) card.appendChild(hdr);
     units.forEach(u=>{
-      const dev=doc.createElement('div');
+      const dev=doc.createElement('div'); dev.className='wk-dev wk-preview wk-collapsed';
+      if(u.pill){ const cat=doc.createElement('div'); cat.className='wk-dev-cat'; cat.appendChild(u.pill.cloneNode(true)); dev.appendChild(cat); }
+      const hd=doc.createElement('div'); hd.className='wk-dev-head'; hd.innerHTML=u.head.innerHTML; dev.appendChild(hd);
       const body=doc.createElement('div'); body.className='wk-dev-body';
       u.body.forEach(n=>body.appendChild(n.cloneNode(true)));
-      if(latest){
-        // preview mode: headline + a few clamped sentences, "Read more" below
-        dev.className='wk-dev wk-preview wk-collapsed';
-        if(u.pill){ const cat=doc.createElement('div'); cat.className='wk-dev-cat'; cat.appendChild(u.pill.cloneNode(true)); dev.appendChild(cat); }
-        const hd=doc.createElement('div'); hd.className='wk-dev-head'; hd.innerHTML=u.head.innerHTML; dev.appendChild(hd);
-        dev.appendChild(body);
-        const more=doc.createElement('button'); more.type='button'; more.className='wk-dev-more'; more.textContent='Read more +';
-        dev.appendChild(more);
-      } else {
-        // fold mode: headline row is the toggle, body hidden until expanded
-        dev.className='wk-dev wk-collapsed';
-        const top=doc.createElement('button'); top.type='button'; top.className='wk-dev-top';
-        if(u.pill){ const cat=doc.createElement('div'); cat.className='wk-dev-cat'; cat.appendChild(u.pill.cloneNode(true)); top.appendChild(cat); }
-        const hd=doc.createElement('span'); hd.className='wk-dev-head'; hd.innerHTML=u.head.innerHTML; top.appendChild(hd);
-        const car=doc.createElement('span'); car.className='wk-caret'; car.textContent='+'; top.appendChild(car);
-        dev.appendChild(top);
-        dev.appendChild(body);
-      }
+      dev.appendChild(body);
+      const more=doc.createElement('button'); more.type='button'; more.className='wk-dev-more'; more.textContent='Read more +';
+      dev.appendChild(more);
       card.appendChild(dev);
     });
   });
 }
-/* On the latest brief, preview the Conflict Status Chart: keep the header + the
-   first theatre row visible, hide the rest behind a "Show all theatres" button. */
+/* Preview the Conflict Status Chart: keep the header + the first two theatre
+   rows visible, hide the rest behind a "Show all theatres" button. */
 function _wkPreviewChart(sec, doc){
   const rows = Array.from(sec.querySelectorAll('table tbody tr'));
   sec.classList.add('wk-chart');
-  if(rows.length<=1) return;
-  rows.forEach((r,i)=>{ if(i>0) r.classList.add('wk-row-extra'); });
+  if(rows.length<=2) return;
+  rows.forEach((r,i)=>{ if(i>1) r.classList.add('wk-row-extra'); });
   sec.classList.add('wk-collapsed');
   const more=doc.createElement('button'); more.type='button'; more.className='wk-chart-more';
   more.setAttribute('data-n', String(rows.length));
@@ -2044,14 +2032,14 @@ function _wkPreviewChart(sec, doc){
 }
 /* Fold each section behind its heading. BLUF and Key Developments stay open by
    default (so all five theatres and their development headlines are visible);
-   Watch Areas is never folded; the Conflict Status Chart previews its first
-   theatre on the latest brief; everything else starts collapsed. */
-function _wkCollapseSections(wrap, doc, latest){
+   Watch Areas is never folded; the Conflict Status Chart previews its first two
+   theatres; everything else starts collapsed. */
+function _wkCollapseSections(wrap, doc){
   wrap.querySelectorAll('section').forEach(sec=>{
     const h=sec.querySelector('h2'); if(!h) return;
     const t=h.textContent||'';
     if(/watch area/i.test(t)) return; // always shown — no toggle
-    if(latest && /conflict status/i.test(t)){ _wkPreviewChart(sec, doc); return; }
+    if(/conflict status/i.test(t)){ _wkPreviewChart(sec, doc); return; }
     const open=/BLUF/i.test(t) || /key development/i.test(t);
     const body=doc.createElement('div'); body.className='wk-sec-body';
     let n=h.nextSibling; while(n){ const nx=n.nextSibling; body.appendChild(n); n=nx; }
@@ -2075,11 +2063,8 @@ function reflowBrief(htmlString){
   // structural tagging (needs original classes, so do it before the strip pass)
   wrap.querySelectorAll('h2').forEach(h=>{ if(/BLUF/i.test(h.textContent||'')){ const d=h.nextElementSibling; if(d) d.classList.add('wk-bluf'); } });
   wrap.querySelectorAll('[class*="bg-panel"]').forEach(d=>d.classList.add('wk-panel'));
-  // Preview-then-expand layout is being trialled on the latest brief only
-  // (weekUrl "/"); older weeks keep the plain fold until the design is approved.
-  const latest = (state.weekUrl==='/' || !state.weekUrl);
-  _wkCollapseDevs(wrap, doc, latest);      // per-development folds inside theatre cards
-  _wkCollapseSections(wrap, doc, latest);  // per-section folds (heading toggles)
+  _wkCollapseDevs(wrap, doc);      // per-development preview cards
+  _wkCollapseSections(wrap, doc);  // per-section folds + chart preview
   // strip pass: keep only whitelisted structure, drop utilities/styles/ids
   wrap.querySelectorAll('*').forEach(el=>{
     const orig = (el.getAttribute('class')||'').split(/\s+/).filter(Boolean);
