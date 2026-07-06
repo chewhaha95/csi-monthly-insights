@@ -220,6 +220,8 @@ a{color:inherit}
 .pop h4{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--red);text-transform:uppercase;margin-bottom:8px}
 .pop p{font-size:12.5px;color:var(--text-2);margin-bottom:7px}
 .pop p b{color:var(--text)}
+.bell-new{background:var(--red);color:#fff;border-radius:8px;padding:9px 11px;margin-bottom:11px;font-size:12.5px;line-height:1.4}
+.bell-new b{color:#fff}
 
 /* ============ SCROLL AREA ============ */
 .scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;position:relative;padding-bottom:24px}
@@ -704,7 +706,7 @@ a{color:inherit}
         <span>&amp; Insights</span>
       </div>
       <div class="tb-right">
-        <button class="icn has-dot" id="btnBell" aria-label="Edition notice">
+        <button class="icn" id="btnBell" aria-label="Edition notice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
         </button>
         <button class="icn" id="btnSaved" aria-label="Saved serials">
@@ -723,6 +725,7 @@ a{color:inherit}
     </div>
 
     <div class="pop" id="bellPop">
+      <div id="bellNew" class="bell-new" style="display:none"></div>
       <h4>Edition · Jun 2026</h4>
       <p><b id="popCount">… serials</b> <span id="popScope">across all four packages.</span></p>
       <p>Handling: <b>Open source · training use</b>.</p>
@@ -1449,7 +1452,7 @@ async function askAll(text){
 }
 
 /* ===================== STATE ===================== */
-const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:true, weekUrl:null, weekLabel:null, weekList:null, q:"", fFormation:"ALL", serialFormation:"ALL", lastTopic:null };
+const state = { section:"feed", serialFilter:"ALL", tab:"MANOEUVRE", mode:"division", search:"", savedOnly:false, saved:new Set(), detailId:null, prevSection:"feed", weekOpen:true, weekUrl:null, weekLabel:null, weekList:null, q:"", fFormation:"ALL", serialFormation:"ALL", lastTopic:null, newEdition:false, newWeek:null };
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -1742,9 +1745,60 @@ function showSection(sec){
   scrollHome();
 }
 
+/* ===================== NEW-CONTENT INDICATOR =====================
+   Lights the bell dot when there is a new monthly edition or a new weekly
+   brief the user has not yet acknowledged. No push, no server, no
+   permission — a freshness signal that shows when the app is opened.
+   Bump EDITION_ID with each monthly edition to notify installed users. */
+const EDITION_ID = "2026-06";
+const EDITION_LABEL = "June 2026";
+function _initFreshness(){
+  try{ const se=localStorage.getItem('csi-seen-edition');
+    if(se===null){ localStorage.setItem('csi-seen-edition', EDITION_ID); state.newEdition=false; }
+    else state.newEdition = se!==EDITION_ID;
+  }catch(e){ state.newEdition=false; }
+  _updateBellDot();
+}
+async function _checkNewWeek(){
+  try{
+    const weeks = await loadWeekList();
+    if(!weeks || !weeks.length) return;
+    const latest = weeks[0].label || weeks[0].url;
+    const sw = localStorage.getItem('csi-seen-week');
+    if(sw===null){ localStorage.setItem('csi-seen-week', latest); state.newWeek=null; }
+    else state.newWeek = (sw!==latest) ? latest : null;
+  }catch(e){}
+  _updateBellDot();
+}
+function _updateBellDot(){ const b=$("#btnBell"); if(b) b.classList.toggle('has-dot', !!(state.newEdition || state.newWeek)); }
+function _ackFreshness(){
+  try{ localStorage.setItem('csi-seen-edition', EDITION_ID);
+    if(state.newWeek) localStorage.setItem('csi-seen-week', state.newWeek);
+  }catch(e){}
+  state.newEdition=false; state.newWeek=null; _updateBellDot();
+}
+
 /* ===================== POP ===================== */
-function closePop(){ $("#bellPop").classList.remove('on'); closeWeekPop(); $("#scrim").classList.remove('on'); }
-function togglePop(){ closeWeekPop(); const on=$("#bellPop").classList.toggle('on'); $("#scrim").classList.toggle('on', on); }
+function closePop(){ $("#bellPop").classList.remove('on'); closeWeekPop(); $("#scrim").classList.remove('on'); const nw=$("#bellNew"); if(nw) nw.style.display='none'; }
+function togglePop(){
+  closeWeekPop();
+  const pop=$("#bellPop");
+  const opening = !pop.classList.contains('on');
+  if(opening){
+    const nw=$("#bellNew");
+    if(nw){
+      if(state.newEdition || state.newWeek){
+        nw.style.display='';
+        nw.innerHTML = (state.newEdition?`<b>New edition</b> — ${EDITION_LABEL} is now live.`:'')
+          + ((state.newEdition&&state.newWeek)?'<br>':'')
+          + (state.newWeek?`<b>New weekly brief</b> — ${esc(state.newWeek)}.`:'');
+      } else nw.style.display='none';
+    }
+    _ackFreshness(); // acknowledge: clear the dot; the notice stays visible until closed
+  }
+  const on=pop.classList.toggle('on'); $("#scrim").classList.toggle('on', on);
+  if(!on){ const nw=$("#bellNew"); if(nw) nw.style.display='none'; }
+}
 
 /* ===================== WEEKLY BRIEFS ===================== */
 /* fetch with a timeout so offline/blocked requests fall back fast */
@@ -1975,6 +2029,7 @@ function init(){
 
   // top bar
   $("#btnBell").onclick = (e)=>{ e.stopPropagation(); togglePop(); };
+  _initFreshness(); _checkNewWeek(); // new-edition / new-weekly indicator (best-effort)
   $("#btnTheme").onclick = toggleTheme; updateThemeIcon();
   const _mc=$("#missCopy"); if(_mc) _mc.onclick=()=>{ const arr=_getMisses(); if(!arr.length) return;
     const text='Ask assistant — unanswered questions (June 2026 edition)\n'+arr.map(x=>`${x.t} — ${x.q}`).join('\n');
