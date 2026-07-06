@@ -1,13 +1,10 @@
-name: Weekly new-brief push
+name: Send new-brief push
 
-# Fires the /api/notify endpoint so subscribed devices get a "new brief" push.
-# Runs weekly, and can be run on demand from the Actions tab.
+# Manual trigger only — run this from the Actions tab whenever a new brief or
+# edition is published, to push a "new brief" notification to subscribed devices.
 # Requires a repo secret NOTIFY_TOKEN matching the Pages NOTIFY_TOKEN variable.
 
 on:
-  schedule:
-    # 01:00 UTC every Monday — adjust to your publishing cadence.
-    - cron: '0 1 * * 1'
   workflow_dispatch: {}
 
 jobs:
