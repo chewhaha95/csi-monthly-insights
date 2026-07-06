@@ -677,7 +677,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
 .feedfoot{margin:18px 16px 8px;padding:17px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-align:center}
 .feedfoot p{font-size:13px;color:var(--text-2);line-height:1.55}
 .feedfoot p b{color:var(--text);font-weight:600}
-.feedfoot a{display:inline-block;margin-top:11px;font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;color:var(--steel);text-decoration:none;text-transform:uppercase;border:1px solid var(--line-2);padding:9px 15px;border-radius:6px}
+.feedfoot a{display:inline-block;margin-top:11px;font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;color:var(--steel);text-decoration:none;text-transform:uppercase;border:1px solid var(--line-2);padding:9px 15px;border-radius:6px;cursor:pointer}
 .feedfoot a:hover{border-color:var(--steel)}
 .lineage{margin:16px 0 4px;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface)}
 .ln-tierrow{display:flex;gap:11px;align-items:flex-start;padding:10px 11px;border-radius:8px;border:1px solid var(--line)}
@@ -1609,7 +1609,7 @@ function renderSerials(){
     if(f==='ALL') html += `<div class="ser-group">${p.label} · ${g.length}</div>`;
     html += g.map(s=>feedCard(s)).join('');
   });
-  html += `<div class="feedfoot"><p>Each serial is a full source packet behind the monthly pack — distilled from the <b>Conflict Studies &amp; Insights</b> weekly briefs.</p><a href="${WEEKLY_URL}" target="_blank" rel="noopener">Read the weekly brief →</a></div>`;
+  html += `<div class="feedfoot"><p>Each serial is a full source packet behind the monthly pack — distilled from the <b>Conflict Studies &amp; Insights</b> weekly briefs.</p><a data-openweek="1" role="button" tabindex="0">Read the weekly brief →</a></div>`;
   c.innerHTML = html;
 }
 
@@ -1673,7 +1673,7 @@ function packHTML(){
   h += frameSectionHTML('opp','Opportunities','Developments to exploit', F.opportunities);
   h += frameSectionHTML('vuln','Vulnerabilities','Where formations are exposed', F.vulnerabilities);
   h += frameSectionHTML('cap','Capability Development','What to develop — doctrine, training, equipment', F.capdev);
-  h += `<div class="feedfoot"><p>This pack distils the <b>Conflict Studies &amp; Insights</b> weekly briefs into a formation-ready monthly learning pack. Open any serial for its full breakdown, decision cards and ICT.</p><a href="${WEEKLY_URL}" target="_blank" rel="noopener">Read the weekly brief →</a></div>`;
+  h += `<div class="feedfoot"><p>This pack distils the <b>Conflict Studies &amp; Insights</b> weekly briefs into a formation-ready monthly learning pack. Open any serial for its full breakdown, decision cards and ICT.</p><a data-openweek="1" role="button" tabindex="0">Read the weekly brief →</a></div>`;
   return h;
 }
 
@@ -1995,6 +1995,16 @@ function reflowBrief(htmlString){
   const src = `<div class="wk-src">Source: <a href="${WEEKLY_BASE}${state.weekUrl==='/'?'/':state.weekUrl}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div>`;
   return src + wrap.innerHTML;
 }
+/* Jump to the in-app Weekly Briefs section (the latest brief). Used by the
+   "Read the weekly brief →" CTAs in the pack/serials footers — keeps readers in
+   the app rather than sending them to the external weekly site. */
+function goWeekly(){
+  state.weekOpen = true;
+  const wt = $("#tabs .tab.weektab");
+  if(wt) $("#tabs").querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b===wt?'true':'false'));
+  if(state.section!=="feed") showSection('feed');
+  renderFeed(); scrollHome();
+}
 async function renderWeekly(){
   const c = $("#feedContent");
   if(state.weekUrl){ selectWeek({url:state.weekUrl, label:state.weekLabel}); return; }
@@ -2047,6 +2057,8 @@ function init(){
 
   // feed taps (delegation)
   $("#feedContent").addEventListener('click', e=>{
+    const ow = e.target.closest('[data-openweek]');
+    if(ow){ e.preventDefault(); goWeekly(); return; }
     const bm = e.target.closest('[data-bm]');
     if(bm){ e.stopPropagation(); toggleSave(bm.dataset.bm); flashSaved(bm); return; }
     const jump = e.target.closest('[data-sec-jump]');
@@ -2090,6 +2102,8 @@ function init(){
 
   // serials taps (delegation) — same behaviour as the pack
   $("#serialsContent").addEventListener('click', e=>{
+    const ow = e.target.closest('[data-openweek]');
+    if(ow){ e.preventDefault(); goWeekly(); return; }
     const fl = e.target.closest('[data-filter]');
     if(fl && !fl.disabled){ state.serialFilter = fl.dataset.filter; renderSerials(); scrollHome(); return; }
     const bm = e.target.closest('[data-bm]');
@@ -2097,6 +2111,8 @@ function init(){
     const card = e.target.closest('[data-id]');
     if(card) openDetail(card.dataset.id);
   });
+  // keyboard access for the hrefless "Read the weekly brief" CTA
+  document.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ const ow=e.target && e.target.closest && e.target.closest('[data-openweek]'); if(ow){ e.preventDefault(); goWeekly(); } } });
 
   // top bar
   $("#btnBell").onclick = (e)=>{ e.stopPropagation(); togglePop(); };
