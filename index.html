@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="CS&amp;I Insights">
-<title>Manoeuvre — Conflict Studies &amp; Insights</title>
+<title>Conflict Studies &amp; Insights</title>
 <!-- Link-share preview (WhatsApp, etc.): show the publication name, not the monthly edition title. -->
 <meta property="og:title" content="Conflict Studies &amp; Insights">
 <meta property="og:site_name" content="Conflict Studies &amp; Insights">
@@ -2028,11 +2028,23 @@ function _wkCollapseDevs(wrap, doc){
     const units=[], pre=[]; let cur=null, pend=null;
     atoms.forEach(a=>{
       if(a.matches('div.font-semibold')){ cur={pill:pend, head:a, body:[]}; pend=null; units.push(cur); }
-      else if(a.matches('span.pill')){ pend=a; }
+      // a pill normally precedes its headline; if one instead sits right after a
+      // headline (before any body), attach it to that dev rather than the next.
+      else if(a.matches('span.pill')){ if(cur && !cur.pill && !cur.body.length) cur.pill=a; else pend=a; }
       else if(cur){ cur.body.push(a); }
       else { pre.push(a); }
     });
     if(!units.length) return;
+    // Safety: only rebuild if nothing would be lost. If the card carries a
+    // top-level node we don't collect (a stray image, sub-heading or bare-text
+    // block), leave the card intact and un-folded rather than dropping content.
+    const kept = new Set([hdr, ...atoms]);
+    const wouldDrop = Array.from(card.children).some(ch=>{
+      if(ch===hdr || (ch.classList && ch.classList.contains('th-hdr'))) return false;
+      if(kept.has(ch) || atoms.some(a=>ch.contains(a))) return false;
+      return (ch.textContent||'').trim().length>0 || !!ch.querySelector('img,figure,svg');
+    });
+    if(wouldDrop) return;
     card.innerHTML=''; if(hdr) card.appendChild(hdr);
     pre.forEach(n=>card.appendChild(n.cloneNode(true)));
     units.forEach(u=>{
