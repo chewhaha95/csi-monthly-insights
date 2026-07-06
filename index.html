@@ -179,6 +179,9 @@ a{color:inherit}
 .weekly .wk-dev.wk-preview.wk-collapsed .wk-dev-body{display:block}
 .weekly .wk-dev.wk-preview.wk-collapsed .wk-dev-body>p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:0}
 .weekly .wk-dev.wk-preview.wk-collapsed .wk-dev-body>:not(p){display:none}
+/* preview reads as plain prose — no link styling until expanded (Theatre 1 look) */
+.weekly .wk-dev.wk-preview.wk-collapsed .wk-dev-body>p a{color:inherit;text-decoration:none;pointer-events:none}
+.weekly .wk-dev.wk-preview.wk-collapsed .wk-dev-body>p .src-group{display:none}
 .weekly .wk-dev-more,.weekly .wk-chart-more{display:inline-block;margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);background:none;border:0;padding:2px 0;cursor:pointer;-webkit-appearance:none}
 .weekly .wk-chart-more{margin:11px 0 2px}
 .weekly .wk-chart.wk-collapsed .wk-row-extra{display:none}
