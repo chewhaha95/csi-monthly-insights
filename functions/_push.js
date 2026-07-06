@@ -43,3 +43,5 @@ export async function sendPush(subscription, subject, privKey) {
   });
   return res.status;
 }
+
+/* redeploy: attach SUBS (KV) + VAPID/NOTIFY secrets for Web Push */
