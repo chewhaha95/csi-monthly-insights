@@ -129,9 +129,17 @@ a{color:inherit}
 .weekly li{font-family:var(--body);font-size:14.5px;line-height:1.55;color:var(--text-2);margin-bottom:6px}
 .weekly a{color:var(--red);text-decoration:underline;text-underline-offset:2px}
 .weekly b,.weekly strong{color:var(--text)}
-.weekly table{width:100%;border-collapse:collapse;font-family:var(--body);font-size:12.5px;margin:4px 0 12px}
-.weekly th,.weekly td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top;color:var(--text-2)}
-.weekly th{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);background:var(--surface-2)}
+/* Weekly tables (e.g. the conflict status chart) fit the phone width — fixed
+   layout so columns never overflow, first columns kept narrow so the last
+   text-heavy column takes the remaining space and wraps. No sideways scroll. */
+.weekly table{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;font-family:var(--body);font-size:11px;margin:4px 0 12px}
+.weekly th,.weekly td{border:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top;color:var(--text-2);overflow-wrap:break-word;hyphens:none}
+.weekly th:nth-child(1),.weekly td:nth-child(1){width:21%}
+.weekly th:nth-child(2),.weekly td:nth-child(2){width:22%}
+.weekly th:nth-child(3),.weekly td:nth-child(3){width:22%}
+.weekly th{font-family:var(--mono);font-size:8.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);background:var(--surface-2)}
+.weekly td .ph{white-space:normal;font-size:8px;padding:2px 5px;display:inline-block}
+.weekly td:nth-child(3),.weekly td:nth-child(3) .wk-strong,.weekly td:nth-child(3) b,.weekly td:nth-child(3) strong{font-weight:400;color:var(--text-2)}
 .weekly .wk-src{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--text-3);margin:0 0 18px}
 .weekly .wk-src a{color:var(--text-3)}
 .weekly .wk-msg{padding:36px 8px;text-align:center}
