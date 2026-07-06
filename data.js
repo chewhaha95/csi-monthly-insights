@@ -219,7 +219,7 @@ const _SEC = {bluf:["bottom line","bluf","summary","summarise","summarize","over
    right serials. Members are single lowercase tokens (the tokeniser splits on
    hyphens/spaces), grounded in the June corpus vocabulary. */
 const SYN = [
-  ["drone","drones","fpv","uav","uas","loitering","quadcopter","geran","shahed","munition"],
+  ["drone","drones","fpv","uav","uas","loitering","quadcopter","geran","shahed"],
   ["fibre","fiber","wired","tethered","optic","unjammable"],
   ["doubletap","double","tap","reattack","rescue","casevac","followup","secondary"],
   ["jam","jamming","jammer","ew","electronic","spoofing","gnss","spectrum","warfare"],
@@ -234,7 +234,14 @@ const SYN = [
   ["subthreshold","greyzone","provocation","incursion","threshold"],
   ["resupply","logistics","sustainment","supply","passability"],
   ["engineer","engineers","sapper","repair","breach","obstacle"],
-  ["forceprotection","survivability","protection","cover","hardening"]
+  ["forceprotection","survivability","protection","cover","hardening"],
+  ["ammunition","ammo","munition","munitions","shell","shells","round","rounds","magazine","stockpile","reload"],
+  ["airdefence","airdefense","sam","interceptor","interception","shorad","gbad","patriot"],
+  ["artillery","arty","howitzer","fires","gun","guns","himars","counterbattery","barrage"],
+  ["casualty","casualties","wounded","medical","medevac","evacuation","evac","treatment"],
+  ["tank","tanks","armour","armor","afv","ifv","mbt","mounted"],
+  ["command","c2","headquarters","comms","communications"],
+  ["power","grid","electricity","water","fuel","energy","utilities"]
 ];
 
 /* ===================== SENSE & STRIKE PACKAGE (Package 2) ===================== */
