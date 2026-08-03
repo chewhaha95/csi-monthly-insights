@@ -8,22 +8,30 @@ model prompt, or follow it directly when editing.
 
 You are writing for a monthly operational-learning digest read by military
 formations (divisions, brigades, combat-support and expeditionary units). The
-voice is **serious strategic analysis: clear, measured, and credible** — the
-register of a professional defence think-tank brief. Every entry must strip
-jargon, state the actual action, and explain the reasoning behind it.
+voice is a **professional staff officer briefing peers: clear, measured, and
+correct** — standard military terminology, not think-tank essay. Every entry
+must strip analyst jargon, state the actual action, and explain the reasoning
+behind it.
 
 ## Core rules
 
 1. **Action first, then the why.** Say what to do (or what happened), then why it
    matters — in that order. Never leave a reader asking "so what?"
-2. **Plain but credible.** Write so a non-specialist understands it, without
-   sounding simplistic. Aim for the register of *ISW / RUSI / War on the Rocks*,
-   not a consultancy deck and not a briefing to schoolchildren.
-3. **Keep precise terms that earn their place; explain the rest.** Terms like
-   *interdiction, cost-exchange, succession window, saturation, sub-threshold,
-   echelon, signature* are fine — they add precision. Spell out or avoid dense
-   acronyms (no unexplained TNDPL, GLOC, TAA). If an acronym isn't universally
-   understood, write it out.
+2. **Staff-officer register, not think-tank.** Write as a professional staff
+   officer briefing peers — clear, measured, using correct military terminology.
+   Not a think-tank essay, not a consultancy deck, and not so plain it reads as a
+   briefing to schoolchildren. Between "too direct" (a blunt kill order) and "too
+   academic" (analyst jargon), aim for the competent middle.
+3. **Standard military terms yes; analyst jargon no.** Terms a staff officer uses
+   — *interdiction, echelon, signature, force protection, resupply, surveillance,
+   overwatch, rules of engagement, ceasefire, cost-exchange* — are correct and
+   welcome. But strip think-tank constructions and render them plainly:
+   *within minutes* not *sensor-to-shooter latency*; *unusual movement patterns*
+   not *pattern-of-life anomalies*; *infrastructure that sustains the war effort*
+   not *war-sustaining infrastructure*; *below the response threshold* not
+   *sub-threshold*; *leave no target untouched* not *completeness of coverage*;
+   *the enemy's internal-security command* not *governance-control layer*. Spell
+   out or avoid dense acronyms (no unexplained TNDPL, GLOC, TAA).
 4. **Concrete over abstract.** Use the real figures and specifics (distances,
    costs, percentages, timeframes) that ground the claim.
 5. **One idea per entry.** Headlines are the point itself, not a label — e.g.
