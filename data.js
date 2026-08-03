@@ -8,7 +8,7 @@
 const SERIALS_M = [
   { id:"M-01", kind:"lesson", title:"Camouflage-and-disguise logistics under sustained ISR-strike pressure (Ukraine)",
     conflict:"RUS-UKR", theatre:"Russia–Ukraine", verdict:"mixed", verdictLabel:"Mixed", dates:"early Jul 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-07/M-01.jpg", imageCredit:"RBC-Ukraine",
     blocks:[
       {l:"What happened", t:"By early July Russian forces stopped moving fuel and ammunition in large convoys and began disguising military cargo as civilian traffic — supplies hidden in ordinary trucks, farm buildings, basements and civilian fuel stations. This was a direct behavioural adaptation to months of Ukrainian mid-range drone interdiction on logistics: dispersal and disguise replaced mass and speed as the survival mechanism."},
       {l:"So what", t:"Convoy-based logistics had become a predictable, high-value target; dispersed, disguised movement sacrifices throughput for survivability. The friendly lesson runs two ways — detection doctrine must shift from convoy signatures to pattern-of-life anomalies, and own resupply should adopt dispersal <em>before</em> attrition forces it."}
@@ -19,7 +19,7 @@ const SERIALS_M = [
     ] },
   { id:"M-02", kind:"lesson", title:"Cell-level interdiction on contact inside a declared security zone (Lebanon)",
     conflict:"ISR-LBN", theatre:"Israel–Lebanon", verdict:"success", verdictLabel:"Success", dates:"2–3 Jul 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-07/M-02.jpg", imageCredit:"JNS",
     blocks:[
       {l:"What happened", t:"On 3 July the IDF struck a Hezbollah cell travelling by motorcycle near the Ali al-Tahir Ridge on identification as an imminent threat to ground troops. A month-long clearance operation in Haddatha, inside the security zone, dismantled 90+ pieces of infrastructure, eliminated 20+ fighters and recovered 150+ weapons. On 2 July, ten infrastructure sites and a weapons-transfer truck were struck in response to attacks on troops in Bint Jbeil, Beit Yahoun, Kounine and Baraachit."},
       {l:"So what", t:"A rapid identify-to-strike cycle on a mobile motorcycle cell demonstrates persistent, low-latency ISR over the security zone rather than reliance on fixed target lists — sensor-to-shooter for mobile targets measured in minutes, and area clearance sustained as a month-long, phased operation rather than a single day."}
@@ -215,7 +215,7 @@ const SERIALS_S = [
     ] },
   { id:"S-02", kind:"lesson", title:"Deep-strike refinery campaign — systematic denial of the last untouched targets (Russia)",
     conflict:"RUS-UKR", theatre:"Russia–Ukraine", verdict:"success", verdictLabel:"Major success", dates:"1–26 Jul 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-07/S-02.jpg", imageCredit:"Al Jazeera",
     blocks:[
       {l:"What happened", t:"Through July Ukraine ran a near-continuous refinery campaign: Omsk (its largest refinery, 2,700 km away, hit 6 Jul), Ufa and NORSI (twice each), Syzran, Ilsky, and the Salavat petrochemical complex — 'the last major petrol producer not yet hit in 2026' — struck by drones travelling ~1,500 km, plus Baltic loading terminals. Targeting logic was systematic: work down a national list of refineries by capacity until none remained untouched."},
       {l:"So what", t:"By early July over 90% of Russian regions reported fuel rationing or shortages. Russian air defence downed a majority per raid (up to 376–415 a night), but interception did not prevent cumulative degradation given the volume and geographic dispersion — completeness of coverage, denying any safe node, was itself the objective."}
@@ -227,7 +227,7 @@ const SERIALS_S = [
     ] },
   { id:"S-03", kind:"lesson", title:"Targeting the internal-security / governance command layer (Gaza)",
     conflict:"ISR-HMS", theatre:"Israel–Gaza", verdict:"success", verdictLabel:"Success", dates:"27 Jul 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-07/S-03.jpg", imageCredit:"The Media Line",
     blocks:[
       {l:"What happened", t:"On 27 July the IDF and Shin Bet killed the commander of Hamas's Internal Security forces for the central refugee camps in a precision strike on his vehicle in Deir al-Balah. This targets a distinct organisational layer from prior military-wing decapitation: internal security enforces ceasefire-period discipline over the population and suppresses dissent — a governance-control function, not a combat one."},
       {l:"So what", t:"Internal-security/police-function commanders are a distinct target category; removing them degrades population-control and internal discipline rather than combat capacity. The downstream effect — whether it triggers instability, opportunity or retaliatory escalation during a ceasefire — becomes an intelligence indicator to watch."}
@@ -350,7 +350,7 @@ const _FMK_CSS = {};
 const SERIALS_CSS = [
   { id:"CS-01", kind:"lesson", title:"Engineer demolition of underground infrastructure under ceasefire constraints (Gaza)",
     conflict:"ISR-HMS", theatre:"Israel–Gaza", verdict:"success", verdictLabel:"Success", dates:"27 Jul 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-07/CS-01.jpg", imageCredit:"The Media Line",
     blocks:[
       {l:"What happened", t:"On 27 July an IDF combat-engineering unit demolished a Hamas tunnel stretching hundreds of metres in northern Gaza, east of the Yellow Line, while maintaining the broader ceasefire-framework deployment posture. Engineer clearance and ceasefire compliance were executed as parallel activities, not sequential ones."},
       {l:"So what", t:"Tunnel demolition against confirmed military infrastructure east of an agreed line can be pre-authorised as compatible with ceasefire compliance — but only with clear standing rules of engagement, and a systematic geolocated record (as released footage provided) that creates a verifiable log for monitoring bodies and deters violation claims."}
@@ -360,7 +360,7 @@ const SERIALS_CSS = [
     ] },
   { id:"CS-02", kind:"lesson", title:"Route recapture triggering immediate infrastructure retaliation (Sudan)",
     conflict:"SDN", theatre:"Sudan", verdict:"mixed", verdictLabel:"Mixed", dates:"late Jul 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-07/CS-02.jpg", imageCredit:"The Defense Post",
     blocks:[
       {l:"What happened", t:"In late July the Sudanese army pushed RSF forces off the 400 km Khartoum–El-Obeid highway after a multi-day advance across North Kordofan. Within hours of losing the highway, the RSF conducted retaliatory drone strikes on two municipal buildings in El-Obeid — the lawyers' association and an Agricultural Bank branch."},
       {l:"So what", t:"The pattern is fast and clear: loss of a physical/logistics objective triggers immediate symbolic strikes against the opposing side's civil administration in a besieged city, rather than an attempt to retake the route directly. When a major route is recaptured, the most likely response is a strike on civil-administration buildings — so harden them first."}
@@ -370,7 +370,7 @@ const SERIALS_CSS = [
     ] },
   { id:"CS-03", kind:"capdev", title:"Sustained infrastructure siege as a campaign, not an incident (Sudan)",
     conflict:"SDN", theatre:"Sudan", verdict:"threat", verdictLabel:"Threat pattern", dates:"Jun–Jul 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-07/CS-03.jpg", imageCredit:"Al Jazeera",
     blocks:[
       {l:"What happened", t:"By July, El-Obeid had endured siege-like conditions for 18 months, with drone strikes systematically re-targeting power substations, fuel stations, water facilities and healthcare on a near-daily basis. The UN verified 15 drone strikes in June alone causing 45+ civilian deaths; combined June–July civilian drone deaths in Kordofan exceeded 880. The pattern re-strikes already-degraded infrastructure — the objective is sustaining collapse, not a one-time knockout."},
       {l:"So what", t:"A garrison held for 18 months by relying on wells and external water tanks once municipal water failed — pre-existing contingency infrastructure mattered more than active defence against the drones. Any position expected to be besieged must pre-position redundant, non-networked essential services, because primary infrastructure will be struck repeatedly, not once."}
@@ -496,7 +496,7 @@ const _FMK_EXP = {};
 const SERIALS_EXP = [
   { id:"EX-01", kind:"lesson", title:"Permanent border fence as a post-ceasefire fait accompli (Thailand–Cambodia)",
     conflict:"THA-KHM", theatre:"Thailand–Cambodia", verdict:"mixed", verdictLabel:"Mixed", dates:"late Jul 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-07/EX-01.jpg", imageCredit:"DW News",
     blocks:[
       {l:"What happened", t:"By late July, nearly a year after the deadliest Thailand–Cambodia clashes in decades, Thailand pressed ahead with a permanent border fence along disputed sections, alongside a declared 'safety perimeter' against Cambodian sniper fire. Cambodia states it has lost at least 60 disputed sites and that 20,000+ of its citizens remain displaced. Formal dialogue had entirely stopped by late July, despite the ceasefire nominally holding."},
       {l:"So what", t:"'Ceasefire holding' does not mean static. Permanent construction under a non-violent ceasefire entrenches territorial control that diplomacy alone cannot reverse — and the <em>absence of dialogue</em> is itself a higher-risk indicator than difficult but active talks. For the observer role, both must be tracked and reported as escalatory trends, not routine quiet."}
@@ -506,7 +506,7 @@ const SERIALS_EXP = [
     ] },
   { id:"EX-02", kind:"capdev", title:"Drone warfare as the dominant threat to static and besieged positions (Sudan)",
     conflict:"SDN", theatre:"Sudan", verdict:"threat", verdictLabel:"Threat pattern", dates:"Jul 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-07/EX-02.jpg", imageCredit:"CNN",
     blocks:[
       {l:"What happened", t:"On-the-ground reporting from besieged El-Obeid documented how ordinary civilian routines — collecting water, market visits — have become primary drone-strike opportunities, with 'you cannot hide from a drone strike' the lived experience. Drone strikes accounted for over 80% of documented civilian fatalities in Kordofan across the year; the tactic exploits predictable movement patterns rather than military positions directly."},
       {l:"So what", t:"For any force in a besieged or static posture the primary threat is airborne, not a ground incursion. Routine daily movement — water, resupply, market/logistics runs — is a predictable strike opportunity that demands deliberate randomisation, dispersal and overhead-cover routing, and a force-protection posture built around counter-UAS detection rather than perimeter defence."}
