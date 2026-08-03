@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#F1EDE3">
 <script>(function(){try{var t=localStorage.getItem('csi-theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icon-192.png?v=4">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=4">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png?v=4">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="CS&amp;I Insights">
-<title>Conflict Studies &amp; Insights</title>
+<title>June 2026 (Archive) — Conflict Studies &amp; Insights</title>
 <!-- Link-share preview (WhatsApp, etc.): show the publication name, not the monthly edition title. -->
 <meta property="og:title" content="Conflict Studies &amp; Insights">
 <meta property="og:site_name" content="Conflict Studies &amp; Insights">
@@ -736,14 +736,14 @@ textarea.fb-input{resize:vertical;min-height:64px}
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app"><div style="flex:0 0 auto;background:#7f1d17;color:#fff;font:600 10.5px/1.5 var(--mono,ui-monospace,monospace);letter-spacing:.09em;text-transform:uppercase;text-align:center;padding:5px 12px">Archived edition · June 2026 · read-only — <a href="/" style="color:#fff;text-decoration:underline">latest ↗</a></div>
 
   <!-- ============ TOP BAR ============ -->
   <header class="topbar" id="topbar">
     <div class="tb-main">
       <div class="tb-left"></div>
       <div class="logo" id="logoHome" role="button" tabindex="0" aria-label="Home">
-        <div class="lk"><img class="brand" src="./apple-touch-icon.png?v=4" alt="CS&amp;I"><b>CONFLICT&nbsp;STUDIES</b></div>
+        <div class="lk"><img class="brand" src="/apple-touch-icon.png?v=4" alt="CS&amp;I"><b>CONFLICT&nbsp;STUDIES</b></div>
         <span>&amp; Insights</span>
       </div>
       <div class="tb-right">
@@ -818,13 +818,6 @@ textarea.fb-input{resize:vertical;min-height:64px}
         <div class="src-feed">
           <a href="https://conflictstudiesandinsights.pages.dev/" target="_blank" rel="noopener"><span>Latest weekly brief<small>conflictstudiesandinsights.pages.dev</small></span><span class="arr">↗</span></a>
           <a href="https://conflictstudiesandinsights.pages.dev/" target="_blank" rel="noopener"><span>Previous editions &amp; archive<small>Weekly · by edition</small></span><span class="arr">↗</span></a>
-        </div>
-      </div>
-      <div class="about-block">
-        <div class="ab-h">Past monthly editions</div>
-        <p>Earlier editions stay available to read, exactly as published.</p>
-        <div class="src-feed">
-          <a href="/archive/2026-06/" target="_blank" rel="noopener"><span>June 2026 edition<small>Archived · read-only</small></span><span class="arr">↗</span></a>
         </div>
       </div>
       <div class="about-block">
@@ -2338,6 +2331,6 @@ function flashSaved(el){ el.style.color = state.saved.has(el.dataset.bm)? "var(-
 
 init();
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){});});}</script>
+<!-- service worker intentionally omitted in archived edition -->
 </body>
 </html>

@@ -1,6 +1,6 @@
 /* Conflict Studies & Insights — service worker.
    Bump CACHE (v1 -> v2 ...) whenever you publish a new edition to force a refresh. */
-const CACHE = 'csi-insights-v88';
+const CACHE = 'csi-insights-v89';
 const ASSETS = [
   './', './index.html', './data.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-512-maskable.png', './apple-touch-icon.png', './og-cover.png'
@@ -25,7 +25,11 @@ self.addEventListener('fetch', e => {
   // good cached copy that offline launches depend on (200 also excludes 206
   // partials, which cache.put rejects).
   // Page loads: network-first so a freshly published edition shows when online; cache fallback offline.
+  // Only the homepage is cached as './index.html'. Other pages (e.g. /archive/<edition>/)
+  // pass straight through to the network so they can never overwrite the app shell.
   if (req.mode === 'navigate') {
+    const path = new URL(req.url).pathname;
+    if (path !== '/' && path !== '/index.html') return; // archive & other pages: browser handles
     e.respondWith(
       fetch(req).then(r => { if (r.status === 200) { const cp = r.clone(); caches.open(CACHE).then(c => c.put('./index.html', cp)); } return r; })
         .catch(() => caches.match('./index.html'))
