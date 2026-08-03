@@ -795,7 +795,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
     <!-- ABOUT -->
     <div class="pane" id="pane-about">
       <h2 class="ph">About</h2>
-      <p class="pintro">Conflict Studies &amp; Insights — the <b>monthly digest</b>. Edition Jun 2026 — three packages: Manoeuvre &amp; Expeditionary, Sense &amp; Strike, and CS &amp; CSS.</p>
+      <p class="pintro">Conflict Studies &amp; Insights — the <b>monthly digest</b>. Edition Jul 2026 — three packages: Manoeuvre &amp; Expeditionary, Sense &amp; Strike, and CS &amp; CSS.</p>
       <div class="about-block">
         <div class="ab-h">Assistant gaps</div>
         <p>Questions the Ask assistant couldn't answer. These are sent to the editors automatically (non-classified questions only) to shape the next edition, and listed here so you can review, copy or clear them.</p>
@@ -824,7 +824,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
         <div class="ab-h">Past monthly editions</div>
         <p>Earlier editions stay available to read, exactly as published.</p>
         <div class="src-feed">
-          <a href="/archive/2026-06/" target="_blank" rel="noopener"><span>June 2026 edition<small>Archived · read-only</small></span><span class="arr">↗</span></a>
+          <a href="/archive/2026-06/" target="_blank" rel="noopener"><span>July 2026 edition<small>Archived · read-only</small></span><span class="arr">↗</span></a>
         </div>
       </div>
       <div class="about-block">
@@ -842,7 +842,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
       </div>
       <div class="about-block">
         <div class="ab-h">The five theatres</div>
-        <p>The weekly brief tracks <b>Russia–Ukraine</b>, <b>Israel–Lebanon</b>, <b>Israel–Gaza</b>, <b>Israel–US–Iran</b> and <b>Thailand–Cambodia</b>. This edition's serials, across all three packages, draw from Russia–Ukraine, Israel–Lebanon, Israel–Gaza and Thailand–Cambodia; Israel–US–Iran is tracked weekly but yielded no serial this edition.</p>
+        <p>The weekly brief tracks <b>Russia–Ukraine</b>, <b>Israel–Lebanon</b>, <b>Israel–Gaza</b>, <b>Israel–US–Iran</b> and <b>Thailand–Cambodia</b>. This edition's serials, across all three packages, draw from Russia–Ukraine, Israel–Lebanon, Israel–Gaza, Thailand–Cambodia and Sudan; Israel–US–Iran is tracked weekly but yielded no serial this edition.</p>
       </div>
       <div class="caveat-box">
         <p><b>Analyst review required before promulgation.</b> Outcome verdicts reflect open-source reporting at time of writing and may revise as events develop. Verify against current staff assessments and apply judgement before use.</p>
@@ -905,7 +905,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
   <!-- bell popover lives here (sibling of the scrim) so it stacks above it and its button is tappable -->
   <div class="pop" id="bellPop">
     <div id="bellNew" class="bell-new" style="display:none"></div>
-    <h4>Edition · Jun 2026</h4>
+    <h4>Edition · Jul 2026</h4>
     <p><b id="popCount">… serials</b> <span id="popScope">across all three packages.</span></p>
     <p>Handling: <b>Open source · training use</b>.</p>
     <p style="color:var(--text-3);margin-bottom:9px">AI-distilled — analyst review required before promulgation.</p>
@@ -1124,7 +1124,7 @@ function synthAll(a){
     return `<div class="lead">I answer mainly from the <b>weekly-brief archive</b>, distilled through June's <b>14 serials</b> and <b>pack overviews</b>. Try a <b>tactic</b> (drones, fibre-optic FPV, double-tap, saturation), an <b>outcome</b> (what worked / what to fix), a <b>theatre</b> (${th}), or ask <b>what to rehearse</b> or for the <b>bottom line</b>.</div>`;
   }
   if(a.type==='bluf'){
-    return `<div class="lead">Bottom line — <b>${_pkgLabel(a.pkg)}</b>, June 2026:</div><div class="msg-bluf">${PKG[a.pkg].BLUF}</div>`
+    return `<div class="lead">Bottom line — <b>${_pkgLabel(a.pkg)}</b>, July 2026:</div><div class="msg-bluf">${PKG[a.pkg].BLUF}</div>`
       + a.items.map(s=>_ansCard(s,'serials')).join('')
       + `<div class="closing">Tap any serial for the full breakdown.</div>`;
   }
@@ -1324,7 +1324,7 @@ function copyAnswer(i, btn){
   const clone=el.cloneNode(true);
   clone.querySelectorAll('.ans-tools,.ans-next').forEach(x=>x.remove());
   document.body.appendChild(clone); const body=clone.innerText.trim(); clone.remove();
-  const text=(m.q?`Q: ${m.q}\n\n`:'')+body+`\n\n— Conflict Studies & Insights · June 2026 digest · first-cut analysis from open sources, calibrate before adoption`;
+  const text=(m.q?`Q: ${m.q}\n\n`:'')+body+`\n\n— Conflict Studies & Insights · July 2026 digest · first-cut analysis from open sources, calibrate before adoption`;
   const done=()=>{ const t=btn.textContent; btn.textContent='Copied ✓'; setTimeout(()=>{ btn.textContent=t; },1400); };
   if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done).catch(()=>{}); }
   else { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); done(); }catch(e){} ta.remove(); }
@@ -1350,7 +1350,7 @@ function askAbout(sid, kind){
     const e=_echCard(sid);
     html=`<div class="lead"><b>Ownership</b> — ${s.title}:</div><div class="ans-frow" data-open="${sid}"><p>${e.card.o||''} <span class="cite">SER ${sid} · ${e.ech}</span></p><p style="margin-top:6px">${e.card.d||''}</p></div>`;
   } else {
-    html=`<div class="lead"><b>Sources</b> — ${s.title} (${s.dates||'Jun 2026'}):</div>`
+    html=`<div class="lead"><b>Sources</b> — ${s.title} (${s.dates||'Jul 2026'}):</div>`
       + s.sources.map((x,i)=>`<div class="pl-row">• <a href="${x.u}" target="_blank" rel="noopener">[${i+1}] ${x.n}</a></div>`).join('')
       + `<div class="closing">Open-source reporting — calibrate before adoption.</div>`;
   }
@@ -1637,8 +1637,8 @@ function renderSerials(){
   const sub = state.savedOnly
     ? `${list.length} serial${list.length===1?'':'s'} saved`
     : (f==='ALL'
-        ? `All ${list.length} serial${list.length===1?'':'s'} · June 2026`
-        : `${list.length} ${(PACKAGES.find(x=>x.k===f)||{}).label} serial${list.length===1?'':'s'} · June 2026`);
+        ? `All ${list.length} serial${list.length===1?'':'s'} · July 2026`
+        : `${list.length} ${(PACKAGES.find(x=>x.k===f)||{}).label} serial${list.length===1?'':'s'} · July 2026`);
   let html = `<h1 class="section-title" style="font-size:28px;padding:18px 16px 2px">${title}</h1>`
     + `<div class="theatre-sub" style="padding-bottom:8px">${sub}</div>`
     + serialsFilterBar();
@@ -1835,8 +1835,8 @@ function showSection(sec){
    brief the user has not yet acknowledged. No push, no server, no
    permission — a freshness signal that shows when the app is opened.
    Bump EDITION_ID with each monthly edition to notify installed users. */
-const EDITION_ID = "2026-06";
-const EDITION_LABEL = "June 2026";
+const EDITION_ID = "2026-07";
+const EDITION_LABEL = "July 2026";
 function _initFreshness(){
   try{ const se=localStorage.getItem('csi-seen-edition');
     if(se===null){ localStorage.setItem('csi-seen-edition', EDITION_ID); state.newEdition=false; }
@@ -2279,7 +2279,7 @@ function init(){
   _initFreshness(); _checkNewWeek(); // new-edition / new-weekly indicator (best-effort)
   $("#btnTheme").onclick = toggleTheme; updateThemeIcon();
   const _mc=$("#missCopy"); if(_mc) _mc.onclick=()=>{ const arr=_getMisses(); if(!arr.length) return;
-    const text='Ask assistant — unanswered questions (June 2026 edition)\n'+arr.map(x=>`${x.t} — ${x.q}`).join('\n');
+    const text='Ask assistant — unanswered questions (July 2026 edition)\n'+arr.map(x=>`${x.t} — ${x.q}`).join('\n');
     if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>{ _mc.textContent='Copied ✓'; setTimeout(()=>{ _mc.textContent='Copy list'; },1400); }).catch(()=>{}); } };
   const _mk=$("#missClear"); if(_mk) _mk.onclick=()=>{ try{ localStorage.removeItem('csi-misses'); }catch(e){} renderMisses(); };
   const _ms=$("#missSend"); if(_ms) _ms.onclick=async()=>{
