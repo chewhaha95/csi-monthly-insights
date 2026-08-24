@@ -2146,9 +2146,14 @@ function reflowBrief(htmlString){
   if(!sections.length) return `<div class="wk-src">Source: <a href="${WEEKLY_BASE}${state.weekUrl==='/'?'/':state.weekUrl}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div><div class="wk-msg"><p>No readable content found.</p></div>`;
   const wrap = doc.createElement('div');
   sections.forEach(sec=>wrap.appendChild(sec.cloneNode(true)));
-  // drop the weekly site's own feedback form — the app collects feedback in About
+  // drop the weekly site's own feedback form — the app collects feedback in About;
+  // also drop the "Watch Areas — Next 7 Days" section when it is just the empty
+  // placeholder ("not published in this edition"), so it never shows as a blank
+  // box. A real Watch Areas section in a future week (any other body text) stays.
   wrap.querySelectorAll('section').forEach(sec=>{
-    if(sec.querySelector('a[href*="form.gov"]') || /feedback\s*&?\s*reflection|share your (feedback|thoughts)/i.test(sec.textContent||'')) sec.remove();
+    const txt = sec.textContent||'';
+    if(sec.querySelector('a[href*="form.gov"]') || /feedback\s*&?\s*reflection|share your (feedback|thoughts)/i.test(txt)) { sec.remove(); return; }
+    if(/watch area/i.test(txt) && /not published in this edition/i.test(txt)) sec.remove();
   });
   // sectionless fallback (a week reflowed via <main>/<article>): kill the form
   // CTA's enclosing block so the external form never renders in-app
