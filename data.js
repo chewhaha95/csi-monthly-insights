@@ -19,13 +19,14 @@ const SERIALS_M = [
     ] },
   { id:"M-02", kind:"lesson", title:"Drone and missile interdiction of the logistics network (Ukraine)",
     conflict:"RUS-UKR", theatre:"Russia–Ukraine", verdict:"threat", verdictLabel:"Threat pattern", dates:"27 Aug 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-08/M-02.jpg", imageCredit:"Kyiv Independent",
     blocks:[
       {l:"What happened", t:"Reuters reported that Russian missiles and drones targeted Ukrainian ports, industrial sites and retailer distribution facilities in an hours-long attack on Kyiv and other locations. Ukrainian officials said the strikes affected logistics and economic infrastructure; Russia's Defence Ministry stated that it had struck military-industrial and military-related targets."},
       {l:"So what", t:"The intermediate rear is no longer a sanctuary. The adversary can combine local FPV pressure against movement corridors with long-range strikes against logistics, port and distribution infrastructure. Sustainment planning should therefore include dispersed trans-shipment points, alternate routes, mobile repair and reload capacity, and time-bound drills for rerouting after the loss of a node."}
     ],
     sources:[
-      {u:"https://www.reuters.com/world/europe/explosions-heard-ukraines-kyiv-reuters-witness-says-2026-08-27/",n:"Reuters — strikes on ports, industry and distribution (27 Aug)"}
+      {u:"https://www.reuters.com/world/europe/explosions-heard-ukraines-kyiv-reuters-witness-says-2026-08-27/",n:"Reuters — strikes on ports, industry and distribution (27 Aug)"},
+      {u:"https://kyivindependent.com/explosions-rock-kyiv-as-russia-launches-ballistic-missiles-at-the-capital-and-other-regions-across-ukraine/",n:"Kyiv Independent — mass strike on Kyiv and other regions (27 Aug)"}
     ] }
 ];
 const FORMATIONS_M = {};
@@ -333,14 +334,15 @@ const SERIALS_CSS = [
     ] },
   { id:"CS-02", kind:"lesson", title:"Targeting weapons flow rather than a single logistics facility (Russia)",
     conflict:"RUS-UKR", theatre:"Russia–Ukraine", verdict:"mixed", verdictLabel:"Developing campaign", dates:"August 2026",
-    formations:[], multi:false,
+    formations:[], multi:false, image:"/img/2026-08/CS-02.jpg", imageCredit:"Defense Express",
     blocks:[
       {l:"What happened", t:"Al Jazeera reported that Ukraine was pressing a campaign to disrupt the flow of Russian personnel, munitions and fuel, alongside attacks against airfields, transport routes, launchers and radars. Separate Ukrainian reporting described strikes against drone-launch sites and associated radar infrastructure."},
       {l:"So what", t:"The objective is not the destruction of a particular warehouse or commercial facility in isolation. It is degradation of the linked movement-and-generation system: transport routes, storage, launch infrastructure, sensors, fuel and the personnel-and-maintenance processes that turn supplies into combat effects. Target assessment should measure system interruption and regeneration time rather than count individual targets struck."}
     ],
     sources:[
       {u:"https://www.aljazeera.com/news/2026/8/28/ukraine-reinforces-donetsk-as-it-seeks-to-disrupt-russias-weapons-flow",n:"Al Jazeera — campaign to disrupt Russian weapons flow (28 Aug)"},
-      {u:"https://kyivindependent.com/ukraine-hits-russian-drone-launch-airfields-in-primorsko-akhtarsk-occupied-donetsk-hur-says/",n:"Kyiv Independent — strikes on launch sites and radars (20 Aug)"}
+      {u:"https://kyivindependent.com/ukraine-hits-russian-drone-launch-airfields-in-primorsko-akhtarsk-occupied-donetsk-hur-says/",n:"Kyiv Independent — strikes on launch sites and radars (20 Aug)"},
+      {u:"https://en.defence-ua.com/news/ukraines_defense_intelligence_strikes_russian_drone_launch_sites_control_systems_and_nebo_u_and_niobiy_systems-19524.html",n:"Defense Express — strikes on launch sites, control systems and Nebo-U/Niobiy radars"}
     ] }
 ];
 const SUMMARY_CSS = {
