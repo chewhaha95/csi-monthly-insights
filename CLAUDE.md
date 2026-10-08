@@ -15,7 +15,7 @@ All content is **open-source, non-classified**.
   git stash pop`. Push with `--force-with-lease`.
 - **Always open a PR AND squash-merge it** (via `mcp__github__create_pull_request` +
   `merge_pull_request`). No merge prompts — the user wants it auto-merged.
-- **Bump `sw.js` `CACHE` version every change** (currently `csi-insights-v98`) or users
+- **Bump `sw.js` `CACHE` version every change** (currently `csi-insights-v99`) or users
   get a stale cached build.
 - Writing style: see `STYLE.md` — plain but credible analytical register (ISW/RUSI),
   third person only (no "our/we/I"), action-first, keep precise terms, no jargon soup,
