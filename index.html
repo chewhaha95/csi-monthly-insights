@@ -148,6 +148,7 @@ a{color:inherit}
 .weekly th{font-family:var(--mono);font-size:8.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);background:var(--surface-2)}
 .weekly td .ph{white-space:normal;font-size:8px;padding:2px 5px;display:inline-block}
 .weekly td:nth-child(3),.weekly td:nth-child(3) .wk-strong,.weekly td:nth-child(3) b,.weekly td:nth-child(3) strong{font-weight:400;color:var(--text-2)}
+.weekly .bw-frame{display:block;width:calc(100% + 32px);margin:0 -16px;height:80vh;border:0;border-top:1px solid var(--line);background:#f7f6f2}
 .weekly .wk-open{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:var(--bg);background:var(--red);padding:9px 12px;border-radius:8px}
 .weekly .bw-st{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-right:7px;vertical-align:1px;color:var(--text-3)}
 .weekly .bw-st.bw-priority{color:var(--red);border-color:var(--red)}
@@ -829,7 +830,7 @@ textarea.fb-input{resize:vertical;min-height:64px}
         <div class="ab-h">Source feed — the weekly brief</div>
         <p>This digest is the formation-level distillation of the <b>Conflict Studies &amp; Insights weekly brief</b>, which tracks the signals across the five conflict theatres. The weekly answers "what's happening"; this monthly answers "so what — and what to rehearse".</p>
         <div class="src-feed">
-          <a href="https://conflictstudiesandinsights.pages.dev/" target="_blank" rel="noopener"><span>Latest weekly brief<small>conflictstudiesandinsights.pages.dev</small></span><span class="arr">↗</span></a>
+          <a href="https://conflictstudiesandinsights.pages.dev/" target="_blank" rel="noopener"><span>Latest biweekly brief<small>conflictstudiesandinsights.pages.dev</small></span><span class="arr">↗</span></a>
           <a href="https://conflictstudiesandinsights.pages.dev/" target="_blank" rel="noopener"><span>Previous editions &amp; archive<small>Weekly · by edition</small></span><span class="arr">↗</span></a>
         </div>
       </div>
@@ -1513,9 +1514,9 @@ async function _askEnhanced(effQ, rawQ){
 const _FOLLOW = ["what about","how about","and for","what of","same for","and with","what if"];
 /* On-device answer card for a weekly-brief extract — tap opens that week */
 function _wkAnswer(wk){
-  return `<div class="lead">The monthly serials don't cover that directly — the weekly briefs do:</div>`
-    + wk.map(c=>`<div class="wk-hit" data-openwk="${esc(c.url)}" data-wklabel="${esc(c.week)}"><div class="wh-k">${esc(c.week)} · ${esc(c.theatre)}</div><p>${esc(c.text.slice(0,300))}${c.text.length>300?'…':''}</p><span class="wh-open">Open this weekly brief →</span></div>`).join('')
-    + `<div class="closing">From the weekly briefs — tap an extract to read the full week.</div>`;
+  return `<div class="lead">The monthly serials don't cover that directly — the briefs do:</div>`
+    + wk.map(c=>`<div class="wk-hit" data-openwk="${esc(c.url)}" data-wklabel="${esc(c.week)}"><div class="wh-k">${esc(c.week)} · ${esc(c.theatre)}</div><p>${esc(c.text.slice(0,300))}${c.text.length>300?'…':''}</p><span class="wh-open">Open this brief →</span></div>`).join('')
+    + `<div class="closing">From the briefs — tap an extract to read the full brief.</div>`;
 }
 /* Pack-analysis extracts as answer cards — tap opens the serial (when the
    extract is tied to one) or that package's pack view. */
@@ -1576,7 +1577,7 @@ function filtered(){
 
 /* ===================== TABS ===================== */
 function buildTabs(){
-  $("#tabs").innerHTML = `<button class="tab weektab" role="tab" data-week="1" aria-selected="${state.weekOpen}">Weekly Briefs</button>`
+  $("#tabs").innerHTML = `<button class="tab weektab" role="tab" data-week="1" aria-selected="${state.weekOpen}">Biweekly Brief</button>`
     + PACKAGES.map(t=>
     `<button class="tab" role="tab" data-k="${t.k}" aria-selected="${!state.weekOpen && t.k===state.tab}">${t.label}</button>`
   ).join('');
@@ -1669,7 +1670,7 @@ function renderSerials(){
     if(f==='ALL') html += `<div class="ser-group">${p.label} · ${g.length}</div>`;
     html += g.map(s=>feedCard(s)).join('');
   });
-  html += `<div class="feedfoot"><p>Each serial is a full source packet behind the monthly pack — distilled from the <b>Conflict Studies &amp; Insights</b> weekly briefs.</p><a data-openweek="1" role="button" tabindex="0">Read the weekly brief →</a></div>`;
+  html += `<div class="feedfoot"><p>Each serial is a full source packet behind the monthly pack — distilled from the <b>Conflict Studies &amp; Insights</b> weekly briefs.</p><a data-openweek="1" role="button" tabindex="0">Read the biweekly brief →</a></div>`;
   c.innerHTML = html;
 }
 
@@ -1733,7 +1734,7 @@ function packHTML(){
   h += frameSectionHTML('opp','Opportunities','Developments to exploit', F.opportunities);
   h += frameSectionHTML('vuln','Vulnerabilities','Where formations are exposed', F.vulnerabilities);
   h += frameSectionHTML('cap','Capability Development','What to develop — doctrine, training, equipment', F.capdev);
-  h += `<div class="feedfoot"><p>This pack distils the <b>Conflict Studies &amp; Insights</b> weekly briefs into a formation-ready monthly learning pack. Open any serial for its full breakdown, decision cards and ICT.</p><a data-openweek="1" role="button" tabindex="0">Read the weekly brief →</a></div>`;
+  h += `<div class="feedfoot"><p>This pack distils the <b>Conflict Studies &amp; Insights</b> weekly briefs into a formation-ready monthly learning pack. Open any serial for its full breakdown, decision cards and ICT.</p><a data-openweek="1" role="button" tabindex="0">Read the biweekly brief →</a></div>`;
   return h;
 }
 
@@ -1954,7 +1955,7 @@ function togglePop(){
         nw.style.display='';
         nw.innerHTML = (state.newEdition?`<b>New edition</b> — ${EDITION_LABEL} is now live.`:'')
           + ((state.newEdition&&state.newWeek)?'<br>':'')
-          + (state.newWeek?`<b>New weekly brief</b> — ${esc(state.newWeek)}.`:'');
+          + (state.newWeek?`<b>New brief</b> — ${esc(state.newWeek)}.`:'');
       } else nw.style.display='none';
     }
     _ackFreshness(); // acknowledge: clear the dot; the notice stays visible until closed
@@ -1985,7 +1986,8 @@ async function loadWeekList(){
     doc.querySelectorAll('a[href]').forEach(a=>{
       const href = a.getAttribute('href')||"";
       if(!/^\/[0-9].*-20\d\d\.html$/i.test(href) || seen.has(href)) return;
-      const label = (a.textContent||"").replace(/\s+/g,' ').trim();
+      let label = (a.textContent||"").replace(/\s+/g,' ').trim();
+      if(label && a.closest('.ft-biweekly')) label += ' · Biweekly';
       if(label){ seen.add(href); list.push({url:href, label}); }
     });
     if(list.length>1){ state.weekList = list; return state.weekList; }
@@ -2034,7 +2036,8 @@ async function selectWeek(w){
     if(seq !== _wkSeq) return;
     const bw = /cx-strip|class="kcd"|id="monitor"|<title>[^<]*Biweekly/i.test(html);
     state.weekKind = bw ? 'Biweekly Brief' : 'Weekly Brief';
-    c.innerHTML = `<div class="weekly">${weekHeadHTML()}${bw ? biweeklyView(html) : reflowBrief(html)}</div>`;
+    c.innerHTML = `<div class="weekly">${weekHeadHTML()}${bw ? biweeklyEmbed(html, w) : reflowBrief(html)}</div>`;
+    if(bw) _bwWatch(seq);
   }catch(e){
     if(seq !== _wkSeq) return;
     const full = WEEKLY_BASE + (w.url==="/" ? "/" : w.url);
@@ -2044,7 +2047,7 @@ async function selectWeek(w){
   scrollHome();
 }
 function weekHeadHTML(){
-  return `<div class="wk-head"><div class="wk-title"><small>${esc(state.weekKind||'Brief')}</small>${state.weekLabel?esc(state.weekLabel):'Select a week'}</div><button class="wk-change" id="wkChange">Change week ▾</button></div>`;
+  return `<div class="wk-head"><div class="wk-title"><small>${esc(state.weekKind||'Brief')}</small>${state.weekLabel?esc(state.weekLabel):'Select an edition'}</div><button class="wk-change" id="wkChange">Change edition ▾</button></div>`;
 }
 function bindWeekHead(){ const b=$("#wkChange"); if(b) b.onclick=(e)=>{ e.stopPropagation(); toggleWeekPop(true); }; }
 /* Reflow the fetched brief into the app's own styling. The source carries a
@@ -2213,14 +2216,48 @@ function _bwChunks(htmlString, week){
   });
   return out;
 }
-function biweeklyView(htmlString){
+/* Full interactive brief in a frame. The brief page (conflictstudiesandinsights)
+   detects it is embedded, hides its own masthead/archive and posts its height;
+   until that arrives the frame has a sensible default height. If no message
+   arrives (blocked/offline frame), the text view below takes over. */
+const WEEKLY_ORIGIN = WEEKLY_BASE ? new URL(WEEKLY_BASE).origin : location.origin;
+function biweeklyEmbed(htmlString, w){
+  const full = WEEKLY_BASE + (w.url==='/' ? '/' : w.url);
+  return `<div class="wk-src">Source: <a href="${esc(full)}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div>`
+    + `<iframe class="bw-frame" src="${esc(full)}" title="Biweekly brief, ${esc(w.label||'')}" scrolling="no" referrerpolicy="no-referrer"></iframe>`
+    + `<div class="bw-fallback" hidden>${biweeklyView(htmlString, true)}</div>`;
+}
+let _bwLoaded = false;
+function _bwWatch(seq){
+  _bwLoaded = false;
+  setTimeout(()=>{
+    if(seq !== _wkSeq || _bwLoaded) return;
+    const f = document.querySelector('.bw-frame'), fb = document.querySelector('.bw-fallback');
+    if(f) f.remove(); if(fb) fb.hidden = false;
+  }, 12000);
+}
+window.addEventListener('message', e=>{
+  if(e.origin !== WEEKLY_ORIGIN || !e.data || typeof e.data !== 'object') return;
+  const f = document.querySelector('.bw-frame');
+  if(!f || e.source !== f.contentWindow) return;
+  if(e.data.type === 'csi-brief-height'){
+    const h = Math.round(+e.data.height);
+    if(h > 200 && h < 60000){ f.style.height = h + 'px'; _bwLoaded = true; }
+  } else if(e.data.type === 'csi-brief-scroll'){
+    const sc = document.querySelector('main.scroll') || document.scrollingElement;
+    const top = +e.data.top || 0;
+    const y = f.getBoundingClientRect().top - (sc.getBoundingClientRect ? sc.getBoundingClientRect().top : 0) + sc.scrollTop + top - 70;
+    sc.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  }
+});
+function biweeklyView(htmlString, asFallback){
   const d = _bwParse(htmlString);
   const full = WEEKLY_BASE + (state.weekUrl==='/' ? '/' : state.weekUrl);
   const safe = h=>/^https:\/\//i.test(h||'') ? esc(h) : '';
   const ST = {priority:'Priority', active:'Active', watch:'Watch', archive:'Archive'};
   const sec = (title, body, open)=>`<section class="wk-sec${open?'':' wk-collapsed'}"><h2 class="wk-sec-toggle"><span class="sec-dot"></span>${esc(title)}<span class="wk-caret">${open?'–':'+'}</span></h2><div class="wk-sec-body">${body}</div></section>`;
-  let h = `<div class="wk-src">Source: <a href="${esc(full)}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div>`;
-  h += `<div class="wk-bluf"><p>This edition includes an interactive conflict map and comic strips that work only on the full page. The text from every section is below.</p><p><a class="wk-open" href="${esc(full)}" target="_blank" rel="noopener">Open the full brief ↗</a></p></div>`;
+  let h = asFallback ? '' : `<div class="wk-src">Source: <a href="${esc(full)}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div>`;
+  h += `<div class="wk-bluf"><p>${asFallback ? 'The interactive brief could not load here. The text from every section is below.' : 'This edition includes an interactive conflict map and comic strips that work only on the full page. The text from every section is below.'}</p><p><a class="wk-open" href="${esc(full)}" target="_blank" rel="noopener">Open the full brief ↗</a></p></div>`;
   if(d.conflicts.length){
     h += sec(`Conflicts monitored (${d.conflicts.length})`, `<div class="wk-panel"><ul>${d.conflicts.map(c=>
       `<li><span class="bw-st bw-${esc(c.status)}">${esc(ST[c.status]||c.status)}</span><b>${esc(c.name)}</b>`+
@@ -2309,7 +2346,7 @@ async function renderWeekly(){
   bindWeekHead();
   const weeks = await loadWeekList();
   if(weeks && weeks.length){ selectWeek(weeks[0]); }
-  else { c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Pick a week from the <b>Weekly Briefs ▾</b> menu to read that week's brief here.</p></div></div>`; bindWeekHead(); }
+  else { c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Pick an edition from the <b>Change edition ▾</b> menu to read it here.</p></div></div>`; bindWeekHead(); }
 }
 
 /* ===================== CHECKLIST ===================== */

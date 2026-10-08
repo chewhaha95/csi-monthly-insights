@@ -15,7 +15,7 @@ All content is **open-source, non-classified**.
   git stash pop`. Push with `--force-with-lease`.
 - **Always open a PR AND squash-merge it** (via `mcp__github__create_pull_request` +
   `merge_pull_request`). No merge prompts — the user wants it auto-merged.
-- **Bump `sw.js` `CACHE` version every change** (currently `csi-insights-v71`) or users
+- **Bump `sw.js` `CACHE` version every change** (currently `csi-insights-v98`) or users
   get a stale cached build.
 - Writing style: see `STYLE.md` — plain but credible analytical register (ISW/RUSI),
   third person only (no "our/we/I"), action-first, keep precise terms, no jargon soup,
@@ -31,7 +31,7 @@ All content is **open-source, non-classified**.
   `.app` is `position:fixed` flex column pinned to the visual viewport (`--vvt`/`--vvh`);
   document never scrolls, content scrolls in `main.scroll`; `overflow-x:hidden`
   everywhere (never let the page scroll sideways). Bottom nav: Pack / Serials / Ask /
-  About. Opens on **Weekly Briefs** by default (`state.weekOpen:true`).
+  About. Opens on the **Biweekly Brief** tab by default (`state.weekOpen:true`).
 - **`data.js`** (~900 lines, ~1.8MB with base64 images) — the entire edition: 14
   serials (M-01..M-03, S-01..S-04, CS-01..CS-03, EX-01..EX-04) across 4 packages, plus
   companion maps (SUMMARY/SIGNAL/APP/ICT/LEARN), PACK/FRAME/PLANNING/KEY_JUDGEMENTS/BLUF,
@@ -41,9 +41,13 @@ All content is **open-source, non-classified**.
   handlers.
 - **`functions/`** — Cloudflare Pages Functions: `api/ask.js` (AI answers),
   `api/subscribe.js` + `api/notify.js` + `_push.js` (Web Push).
-- **Weekly briefs** live on a SEPARATE site (`conflictstudiesandinsights.pages.dev`);
-  the app fetches + reflows them live (`reflowBrief` in index.html). Nothing weekly is
-  stored in this repo.
+- **Briefs** live on a SEPARATE site (`conflictstudiesandinsights.pages.dev`). Since
+  Oct 2026 it publishes the **biweekly** brief; its homepage is the latest edition and its
+  footer lists earlier biweekly editions (`.ft-biweekly`) plus the weekly archive. The app's
+  "Biweekly Brief" tab shows biweekly pages in a full-width iframe (`biweeklyEmbed`), sized
+  by `csi-brief-height` postMessages from the brief page (origin-checked), with the text
+  view `biweeklyView` as a 12 s fallback. Weekly archive pages are still reflowed
+  (`reflowBrief`). Nothing from the brief site is stored in this repo.
 
 ## Ask assistant (the AI)
 Three-tier model chain in `functions/api/ask.js` (first available wins):
