@@ -148,6 +148,11 @@ a{color:inherit}
 .weekly th{font-family:var(--mono);font-size:8.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);background:var(--surface-2)}
 .weekly td .ph{white-space:normal;font-size:8px;padding:2px 5px;display:inline-block}
 .weekly td:nth-child(3),.weekly td:nth-child(3) .wk-strong,.weekly td:nth-child(3) b,.weekly td:nth-child(3) strong{font-weight:400;color:var(--text-2)}
+.weekly .wk-open{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:var(--bg);background:var(--red);padding:9px 12px;border-radius:8px}
+.weekly .bw-st{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-right:7px;vertical-align:1px;color:var(--text-3)}
+.weekly .bw-st.bw-priority{color:var(--red);border-color:var(--red)}
+.weekly .bw-phase,.weekly .bw-cite,.weekly .bw-conf{font-size:12.5px;color:var(--text-3)}
+.weekly ol.bw-panels{padding-left:20px}
 .weekly .wk-src{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--text-3);margin:0 0 18px}
 .weekly .wk-src a{color:var(--text-3)}
 .weekly .wk-msg{padding:36px 8px;text-align:center}
@@ -1190,6 +1195,7 @@ function synthAll(a){
    offline or a blocked fetch just leaves Ask serial-only. */
 const WKC = { state:'off', chunks:[] }; // off | loading | ready | failed
 function _wkChunksFrom(htmlString, week){
+  if(/cx-strip|class="kcd"|id="monitor"/.test(htmlString)) return _bwChunks(htmlString, week);
   const doc = new DOMParser().parseFromString(htmlString, 'text/html');
   const out=[], clean=t=>(t||'').replace(/\s+/g,' ').trim();
   doc.querySelectorAll('.theatre-card').forEach(card=>{
@@ -2005,7 +2011,7 @@ async function toggleWeekPop(force){
 function renderWeekPop(weeks){
   const pop = $("#weekPop");
   pop.innerHTML = weeks.map((w,i)=>
-    `<button class="wk-row" role="option" data-wk="${i}" aria-selected="${w.url===state.weekUrl}">${i===0?'<span class="wk-cur">Current week</span>':''}${esc(w.label)}</button>`
+    `<button class="wk-row" role="option" data-wk="${i}" aria-selected="${w.url===state.weekUrl}">${i===0?'<span class="wk-cur">Latest edition</span>':''}${esc(w.label)}</button>`
   ).join('');
   pop.querySelectorAll('.wk-row').forEach(row=>{
     row.onclick = ()=>{ const w = weeks[+row.dataset.wk]; closeWeekPop(); selectWeek(w); };
@@ -2015,7 +2021,7 @@ let _wkSeq = 0;
 async function selectWeek(w){
   if(!w) return;
   const seq = ++_wkSeq; // stale-response guard: only the latest selection may render
-  state.weekUrl = w.url; state.weekLabel = w.label;
+  state.weekUrl = w.url; state.weekLabel = w.label; state.weekKind = '';
   const c = $("#feedContent");
   c.innerHTML = `<div class="weekly">${weekHeadHTML()}<div class="wk-msg"><p>Loading brief…</p></div></div>`;
   bindWeekHead(); // "Change week ▾" stays usable while the brief loads
@@ -2026,7 +2032,9 @@ async function selectWeek(w){
     if(!res.ok) throw new Error("HTTP "+res.status);
     const html = await res.text();
     if(seq !== _wkSeq) return;
-    c.innerHTML = `<div class="weekly">${weekHeadHTML()}${reflowBrief(html)}</div>`;
+    const bw = /cx-strip|class="kcd"|id="monitor"|<title>[^<]*Biweekly/i.test(html);
+    state.weekKind = bw ? 'Biweekly Brief' : 'Weekly Brief';
+    c.innerHTML = `<div class="weekly">${weekHeadHTML()}${bw ? biweeklyView(html) : reflowBrief(html)}</div>`;
   }catch(e){
     if(seq !== _wkSeq) return;
     const full = WEEKLY_BASE + (w.url==="/" ? "/" : w.url);
@@ -2036,7 +2044,7 @@ async function selectWeek(w){
   scrollHome();
 }
 function weekHeadHTML(){
-  return `<div class="wk-head"><div class="wk-title"><small>Weekly Brief</small>${state.weekLabel?esc(state.weekLabel):'Select a week'}</div><button class="wk-change" id="wkChange">Change week ▾</button></div>`;
+  return `<div class="wk-head"><div class="wk-title"><small>${esc(state.weekKind||'Brief')}</small>${state.weekLabel?esc(state.weekLabel):'Select a week'}</div><button class="wk-change" id="wkChange">Change week ▾</button></div>`;
 }
 function bindWeekHead(){ const b=$("#wkChange"); if(b) b.onclick=(e)=>{ e.stopPropagation(); toggleWeekPop(true); }; }
 /* Reflow the fetched brief into the app's own styling. The source carries a
@@ -2140,6 +2148,100 @@ function _wkCollapseSections(wrap, doc){
     h.classList.add('wk-sec-toggle');
     const car=doc.createElement('span'); car.className='wk-caret'; car.textContent=open?'–':'+'; h.appendChild(car);
   });
+}
+/* ===================== BIWEEKLY BRIEF =====================
+   From 15–28 Sep 2026 the brief site publishes "CSI Biweekly Conflict
+   Insights": an interactive map (script-driven) and inline-SVG comic strips.
+   The generic reflow strips scripts, ids and classes, which leaves the map
+   inert and the strips without figures — so biweekly pages are detected and
+   rebuilt from their text instead, with a link out to the full page. */
+function _isBiweekly(doc){
+  return !!(doc.querySelector('.cx-strip, .kcd, #monitor') || /Biweekly/i.test(doc.title||''));
+}
+function _bwStr(raw){ try{ return JSON.parse('"'+raw+'"'); }catch(e){ return raw; } }
+function _bwParse(htmlString){
+  const doc = new DOMParser().parseFromString(htmlString, 'text/html');
+  const clean = t=>(t||'').replace(/\s+/g,' ').trim();
+  const out = { doc, period: clean((doc.querySelector('.period')||{}).textContent), conflicts:[], kcd:[], topics:[] };
+  // Map data lives in the page script: { code:'X', name:'…', status:'…', … phase:"…", latest:"…", sub:{ title:'…', text:"…" } }
+  const STR = '"((?:[^"\\\\]|\\\\.)*)"';
+  const re = /\{ code: '([A-Z-]+)', name: '([^']+)', status: '([a-z]+)'/g;
+  const starts = []; let m;
+  while((m = re.exec(htmlString))) starts.push({i:m.index, code:m[1], name:m[2], status:m[3]});
+  starts.forEach((st,k)=>{
+    const chunk = htmlString.slice(st.i, k+1<starts.length ? starts[k+1].i : st.i+6000);
+    const g = (key)=>{ const r = chunk.match(new RegExp(key+': '+STR)); return r ? _bwStr(r[1]) : ''; };
+    const sub = chunk.match(new RegExp("sub: \\{ title: '([^']+)', text: "+STR));
+    out.conflicts.push({ code:st.code, name:st.name, status:st.status, phase:g('phase'), latest:g('latest'),
+      sub: sub ? {title:sub[1], text:_bwStr(sub[2])} : null });
+  });
+  const rank = {priority:0, active:1, watch:2, archive:3};
+  out.conflicts.sort((a,b)=>(rank[a.status]??9)-(rank[b.status]??9));
+  doc.querySelectorAll('.kcd').forEach(el=>{
+    const links = Array.from(el.querySelectorAll('.cite a')).map(a=>({href:a.getAttribute('href')||'', label:clean(a.textContent)}));
+    const tx = el.querySelector('.kcd-text'); const copy = tx ? tx.cloneNode(true) : null;
+    if(copy) copy.querySelectorAll('.cite').forEach(c=>c.remove());
+    out.kcd.push({ name: clean((el.querySelector('.kcd-name')||{}).textContent), text: clean(copy&&copy.textContent), links });
+  });
+  doc.querySelectorAll('.topic').forEach(el=>{
+    const take = Array.from(el.querySelectorAll('.cx-take p')).map(p=>{
+      const lab = p.querySelector('.label'); const l = clean(lab&&lab.textContent);
+      return { label:l, text: clean(p.textContent).slice(l.length).trim() };
+    });
+    out.topics.push({
+      fn: clean((el.querySelector('.fn')||{}).textContent),
+      title: clean((el.querySelector('h3')||{}).textContent),
+      tag: clean((el.querySelector('.cx-tag')||{}).textContent),
+      conf: (()=>{ const all=clean((el.querySelector('.cx-conf')||{}).textContent), chip=clean((el.querySelector('.cx-chip')||{}).textContent);
+        return chip && all.startsWith(chip) ? chip+' — '+all.slice(chip.length).trim() : all; })(),
+      panels: Array.from(el.querySelectorAll('.cx-panel figcaption')).map(f=>clean(f.textContent).replace(/^\d+\s*/,'')),
+      take
+    });
+  });
+  return out;
+}
+function _bwChunks(htmlString, week){
+  const d = _bwParse(htmlString), out = [];
+  d.conflicts.forEach(c=>{
+    const t = [c.phase && ('Phase: '+c.phase), c.latest, c.sub && (c.sub.title+': '+c.sub.text)].filter(Boolean).join(' ');
+    if(t) out.push({week:week.label, url:week.url, theatre:c.name, text:t.slice(0,900)});
+  });
+  d.kcd.forEach(k=>{ if(k.text) out.push({week:week.label, url:week.url, theatre:k.name, text:('Key development: '+k.text).slice(0,900)}); });
+  d.topics.forEach(t=>{
+    const txt = [t.title, t.conf, t.panels.join(' '), t.take.map(x=>x.label+': '+x.text).join(' ')].filter(Boolean).join(' ');
+    if(txt) out.push({week:week.label, url:week.url, theatre:'Learning topic — '+(t.fn||'General'), text:txt.slice(0,900)});
+  });
+  return out;
+}
+function biweeklyView(htmlString){
+  const d = _bwParse(htmlString);
+  const full = WEEKLY_BASE + (state.weekUrl==='/' ? '/' : state.weekUrl);
+  const safe = h=>/^https:\/\//i.test(h||'') ? esc(h) : '';
+  const ST = {priority:'Priority', active:'Active', watch:'Watch', archive:'Archive'};
+  const sec = (title, body, open)=>`<section class="wk-sec${open?'':' wk-collapsed'}"><h2 class="wk-sec-toggle"><span class="sec-dot"></span>${esc(title)}<span class="wk-caret">${open?'–':'+'}</span></h2><div class="wk-sec-body">${body}</div></section>`;
+  let h = `<div class="wk-src">Source: <a href="${esc(full)}" target="_blank" rel="noopener">conflictstudiesandinsights.pages.dev ↗</a></div>`;
+  h += `<div class="wk-bluf"><p>This edition includes an interactive conflict map and comic strips that work only on the full page. The text from every section is below.</p><p><a class="wk-open" href="${esc(full)}" target="_blank" rel="noopener">Open the full brief ↗</a></p></div>`;
+  if(d.conflicts.length){
+    h += sec(`Conflicts monitored (${d.conflicts.length})`, `<div class="wk-panel"><ul>${d.conflicts.map(c=>
+      `<li><span class="bw-st bw-${esc(c.status)}">${esc(ST[c.status]||c.status)}</span><b>${esc(c.name)}</b>`+
+      (c.phase?`<br><span class="bw-phase">Phase: ${esc(c.phase)}</span>`:'')+
+      (c.latest?`<br>${esc(c.latest)}`:'')+
+      (c.sub?`<br><b>${esc(c.sub.title)}:</b> ${esc(c.sub.text)}`:'')+`</li>`).join('')}</ul></div>`, true);
+  }
+  if(d.kcd.length){
+    h += sec('Key conflict developments', d.kcd.map(k=>
+      `<div class="wk-item"><h3>${esc(k.name)}</h3><p>${esc(k.text)}</p>`+
+      (k.links.length?`<p class="bw-cite">Source: ${k.links.filter(l=>safe(l.href)).map(l=>`<a href="${safe(l.href)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join(' · ')}</p>`:'')+`</div>`).join(''), true);
+  }
+  if(d.topics.length){
+    h += sec('Key learning topics', d.topics.map(t=>
+      `<div class="wk-item"><h4>${esc(t.fn)}</h4><h3>${esc(t.title)}</h3>`+
+      (t.conf?`<p class="bw-conf">${esc(t.conf)}</p>`:'')+
+      (t.panels.length?`<ol class="bw-panels">${t.panels.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:'')+
+      t.take.map(x=>`<p><b>${esc(x.label)}:</b> ${esc(x.text)}</p>`).join('')+
+      `<p><a href="${esc(full)}" target="_blank" rel="noopener">See the comic strip and full analysis ↗</a></p></div>`).join(''), false);
+  }
+  return h;
 }
 function reflowBrief(htmlString){
   const doc = new DOMParser().parseFromString(htmlString, "text/html");

@@ -116,7 +116,22 @@ const WEEKLY_URL = "https://conflictstudiesandinsights.pages.dev/";
    supersedes this whenever available. `url` is relative to WEEKLY_BASE. */
 const WEEKLY_BASE = "https://conflictstudiesandinsights.pages.dev";
 const WEEKLY_WEEKS_FALLBACK = [
-  {url:"/", label:"22 June – 29 June 2026"},
+  {url:"/", label:"Latest edition"},
+  {url:"/15-28-sep-2026.html", label:"15 September – 28 September 2026 (Biweekly)"},
+  {url:"/21-28-sep-2026.html", label:"21 September – 28 September 2026"},
+  {url:"/14-21-sep-2026.html", label:"14 September – 21 September 2026"},
+  {url:"/7-14-sep-2026.html", label:"7 September – 14 September 2026"},
+  {url:"/31-aug-7-sep-2026.html", label:"31 August – 7 September 2026"},
+  {url:"/24-31-aug-2026.html", label:"24 August – 31 August 2026"},
+  {url:"/17-24-aug-2026.html", label:"17 August – 24 August 2026"},
+  {url:"/10-17-aug-2026.html", label:"10 August – 17 August 2026"},
+  {url:"/3-10-aug-2026.html", label:"3 August – 10 August 2026"},
+  {url:"/27-jul-3-aug-2026.html", label:"27 July – 3 August 2026"},
+  {url:"/20-27-jul-2026.html", label:"20 July – 27 July 2026"},
+  {url:"/13-20-jul-2026.html", label:"13 July – 20 July 2026"},
+  {url:"/6-13-jul-2026.html", label:"6 July – 13 July 2026"},
+  {url:"/29-jun-6-jul-2026.html", label:"29 June – 6 July 2026"},
+  {url:"/22-29-jun-2026.html", label:"22 June – 29 June 2026"},
   {url:"/15-22-jun-2026.html", label:"15 June – 22 June 2026"},
   {url:"/8-15-jun-2026.html", label:"8 June – 15 June 2026"},
   {url:"/1-8-jun-2026.html", label:"1 June – 8 June 2026"},
